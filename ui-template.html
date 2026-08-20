@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wealify - AI Financial Guardian</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      /* Surfaces */
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #FAFAFA;
+      --bg-tertiary: #F4F4F5;
+      --bg-inverse: #0B0B0B;
+
+      /* Text */
+      --text-primary: #0B0B0B;
+      --text-secondary: #525252;
+      --text-tertiary: #A3A3A3;
+      --text-inverse: #FFFFFF;
+
+      /* Borders */
+      --border-color: #E5E5E5;
+      --border-strong: #0B0B0B;
+
+      /* Wealify Navy (branding/headers) */
+      --primary: #1A365D;
+      --primary-hover: #14284A;
+      --primary-light: #2C5282;
+
+      /* Wealify Orange (accent/CTAs) */
+      --accent: #FF6B1A;
+      --accent-hover: #E55A0F;
+      --accent-light: #FFF1E8;
+
+      /* Status (kept compatible, shifted slightly toward Wealify palette) */
+      --positive: #16A34A;
+      --positive-light: #DCFCE7;
+      --negative: #DC2626;
+      --negative-light: #FEE2E2;
+      --warning: #D97706;
+      --warning-light: #FFFBEB;
+    }
+
+    .dark {
+      --bg-primary: #0B0B0B;
+      --bg-secondary: #141414;
+      --bg-tertiary: #1F1F1F;
+      --bg-inverse: #FFFFFF;
+
+      --text-primary: #F5F5F5;
+      --text-secondary: #A3A3A3;
+      --text-tertiary: #737373;
+      --text-inverse: #0B0B0B;
+
+      --border-color: #262626;
+      --border-strong: #FFFFFF;
+
+      --primary: #60A5FA;
+      --primary-hover: #93C5FD;
+      --primary-light: #93C5FD;
+
+      --accent: #FF8A4A;
+      --accent-hover: #FFA371;
+      --accent-light: #2A1810;
+
+      --positive: #22C55E;
+      --positive-light: #14532D;
+      --negative: #EF4444;
+      --negative-light: #7F1D1D;
+      --warning: #FBBF24;
+      --warning-light: #422006;
+    }
+
+    * {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Selection */
+    ::selection {
+      background-color: var(--accent);
+      color: white;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.3s, color 0.3s;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Color Classes */
+    .bg-primary { background-color: var(--bg-primary); }
+    .bg-secondary { background-color: var(--bg-secondary); }
+    .bg-tertiary { background-color: var(--bg-tertiary); }
+    .bg-accent { background-color: var(--accent); }
+    .bg-accent-light { background-color: var(--accent-light); }
+    .bg-primary-brand { background-color: var(--primary); }
+    .text-primary { color: var(--text-primary); }
+    .text-secondary { color: var(--text-secondary); }
+    .text-tertiary { color: var(--text-tertiary); }
+    .text-accent { color: var(--accent); }
+    .text-positive { color: var(--positive); }
+    .text-negative { color: var(--negative); }
+    .text-warning { color: var(--warning); }
+    .text-primary-brand { color: var(--primary); }
+    .border-custom { border-color: var(--border-color); }
+    .border-accent { border-color: var(--accent); }
+
+    /* Divider */
+    .section-divider { height: 1px; background-color: var(--border-color); }
+
+    /* Status Dot */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .list-item:hover .status-dot {
+      transform: scale(1.25);
+    }
+
+    /* ============================================
+       BUTTON STYLES
+       ============================================ */
+    .btn-primary {
+      background-color: var(--accent);
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+      transform: translateX(-100%);
+      transition: transform 0.5s;
+    }
+    .btn-primary:hover::before {
+      transform: translateX(100%);
+    }
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background-color: var(--border-color);
+    }
+    .btn-secondary:active {
+      transform: scale(0.98);
+    }
+
+    .btn-outline {
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+    .btn-outline:hover {
+      border-color: var(--text-primary);
+      background-color: var(--bg-tertiary);
+    }
+    .btn-outline:active {
+      transform: scale(0.98);
+    }
+
+    .btn-ghost {
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover {
+      color: var(--text-primary);
+      background-color: var(--bg-tertiary);
+    }
+
+    /* ============================================
+       FORM INPUTS
+       ============================================ */
+    .input-field {
+      width: 100%;
+      padding: 14px 16px;
+      background-color: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .input-field:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 107, 26, 0.12);
+    }
+    .input-field::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .input-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    /* Floating Label Form */
+    .form-group {
+      position: relative;
+    }
+    .form-group .input-field {
+      padding-top: 20px;
+      padding-bottom: 8px;
+    }
+    .form-group .input-label {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--text-tertiary);
+      pointer-events: none;
+      transition: all 0.2s;
+    }
+    .form-group .input-field:focus + .input-label,
+    .form-group .input-field:not(:placeholder-shown) + .input-label {
+      top: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    /* ============================================
+       NAVIGATION
+       ============================================ */
+    .nav-link {
+      position: relative;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: color 0.2s;
+    }
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background-color: var(--accent);
+      transition: width 0.2s;
+    }
+    .nav-link:hover {
+      color: var(--text-primary);
+    }
+    .nav-link:hover::after {
+      width: 100%;
+    }
+    .nav-link.active {
+      color: var(--accent);
+    }
+    .nav-link.active::after {
+      width: 100%;
+    }
+
+    /* ============================================
+       CARDS & LIST ITEMS
+       ============================================ */
+    .card-hover {
+      transition: all 0.2s;
+    }
+    .card-hover:hover {
+      border-color: var(--text-tertiary);
+      transform: translateY(-2px);
+    }
+
+    .list-item {
+      transition: background-color 0.15s;
+      cursor: pointer;
+    }
+    .list-item:hover {
+      background-color: var(--bg-tertiary);
+    }
+
+    /* Feature Cards */
+    .feature-card {
+      transition: all 0.3s;
+    }
+    .feature-card:hover {
+      border-color: var(--accent);
+    }
+    .feature-card:hover .feature-number {
+      color: var(--accent);
+    }
+    .feature-number {
+      transition: color 0.3s;
+    }
+
+    /* ============================================
+       BADGES & TABS
+       ============================================ */
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      transition: all 0.2s;
+    }
+
+    .tab-pill {
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .tab-pill.active {
+      background-color: var(--accent);
+      color: white;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    }
+    .tab-pill:not(.active):hover {
+      background-color: var(--bg-tertiary);
+    }
+
+    /* ============================================
+       PROGRESS BARS
+       ============================================ */
+    .progress-track {
+      height: 6px;
+      background-color: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ============================================
+       SCROLLBAR
+       ============================================ */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-tertiary);
+    }
+
+    /* ============================================
+       GRADIENT & DECORATIVE
+       ============================================ */
+    .gradient-text {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .grid-pattern {
+      background-image:
+        linear-gradient(var(--border-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* ============================================
+       ANIMATIONS
+       ============================================ */
+
+    /* Fade In Up */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Fade In */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Scale In */
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Slide In Right */
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Pulse */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Shimmer */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Float */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Animate on scroll */
+    .animate-on-scroll {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .animate-on-scroll.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Stagger children */
+    .stagger-children > * {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .stagger-children.visible > *:nth-child(1) { animation: fadeInUp 0.4s 0ms forwards; }
+    .stagger-children.visible > *:nth-child(2) { animation: fadeInUp 0.4s 100ms forwards; }
+    .stagger-children.visible > *:nth-child(3) { animation: fadeInUp 0.4s 200ms forwards; }
+    .stagger-children.visible > *:nth-child(4) { animation: fadeInUp 0.4s 300ms forwards; }
+    .stagger-children.visible > *:nth-child(5) { animation: fadeInUp 0.4s 400ms forwards; }
+    .stagger-children.visible > *:nth-child(6) { animation: fadeInUp 0.4s 500ms forwards; }
+    .stagger-children.visible > *:nth-child(7) { animation: fadeInUp 0.4s 600ms forwards; }
+    .stagger-children.visible > *:nth-child(8) { animation: fadeInUp 0.4s 700ms forwards; }
+
+    /* Hero Animation */
+    .hero-animate {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    .hero-animate-delay-1 {
+      animation: fadeInUp 0.6s ease-out 100ms forwards;
+      opacity: 0;
+    }
+    .hero-animate-delay-2 {
+      animation: fadeInUp 0.6s ease-out 200ms forwards;
+      opacity: 0;
+    }
+    .hero-animate-delay-3 {
+      animation: fadeInUp 0.6s ease-out 300ms forwards;
+      opacity: 0;
+    }
+    .hero-animate-delay-4 {
+      animation: fadeInUp 0.6s ease-out 400ms forwards;
+      opacity: 0;
+    }
+
+    /* ============================================
+       VIEW TRANSITIONS
+       ============================================ */
+    .view {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .view.active {
+      display: block;
+    }
+
+    /* ============================================
+       SKELETON LOADING
+       ============================================ */
+    .skeleton {
+      background: linear-gradient(
+        90deg,
+        var(--bg-tertiary) 25%,
+        var(--border-color) 50%,
+        var(--bg-tertiary) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* ============================================
+       NOTIFICATION BADGE
+       ============================================ */
+    .notification-badge {
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 2s infinite;
+    }
+
+    /* ============================================
+       MOBILE MENU
+       ============================================ */
+    .mobile-menu {
+      position: fixed;
+      inset: 0;
+      background-color: var(--bg-primary);
+      z-index: 100;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .mobile-menu.hidden { display: none; }
+
+    /* ============================================
+       PRICING CARD HOVER
+       ============================================ */
+    .pricing-card {
+      transition: all 0.3s;
+    }
+    .pricing-card:hover {
+      transform: translateY(-4px);
+    }
+    .pricing-card.featured {
+      transform: scale(1.02);
+    }
+    .pricing-card.featured:hover {
+      transform: scale(1.02) translateY(-4px);
+    }
+
+    /* ============================================
+       LINK UNDERLINE
+       ============================================ */
+    .link-underline {
+      position: relative;
+    }
+    .link-underline::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background-color: var(--accent);
+      transition: width 0.2s;
+    }
+    .link-underline:hover::after {
+      width: 100%;
+    }
+
+    /* ============================================
+       STEP NUMBER
+       ============================================ */
+    .step-number {
+      transition: all 0.3s;
+    }
+    .step-card:hover .step-number {
+      transform: scale(1.1);
+      box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.1);
+    }
+
+    /* ============================================
+       CHECKBOX CUSTOM
+       ============================================ */
+    input[type="checkbox"] {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-color);
+      border-radius: 4px;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+    input[type="checkbox"]:checked {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+    input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 4px;
+      height: 8px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+    input[type="checkbox"]:hover {
+      border-color: var(--accent);
+    }
+
+    /* ============================================
+       FOCUS VISIBLE
+       ============================================ */
+    :focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- ==================== LANDING PAGE ==================== -->
+  <div id="landing-view" class="view active">
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 border-b border-custom bg-secondary/80 backdrop-blur-xl">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="flex items-center justify-between h-16">
+          <span class="text-xl font-bold tracking-tight">Wealify</span>
+
+          <div class="hidden md:flex items-center gap-8">
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#how-it-works" class="nav-link">How It Works</a>
+            <a href="#pricing" class="nav-link">Pricing</a>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button id="landing-theme-toggle" class="btn-ghost px-3 py-2 text-sm font-medium">
+              <span class="hidden dark:inline">Light</span>
+              <span class="inline dark:hidden">Dark</span>
+            </button>
+            <button onclick="showView('login-view')" class="btn-outline px-4 py-2 text-sm font-semibold">
+              Sign In
+            </button>
+            <button onclick="showView('register-view')" class="btn-primary px-4 py-2 text-sm font-semibold">
+              Get Started
+            </button>
+          </div>
+
+          <button id="mobile-menu-btn" class="md:hidden btn-ghost p-2">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu hidden md:hidden">
+      <div class="flex items-center justify-between mb-8">
+        <span class="text-xl font-bold">Wealify</span>
+        <button id="mobile-menu-close" class="btn-ghost p-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="flex flex-col gap-4">
+        <a href="#features" class="text-lg font-medium py-2" onclick="closeMobileMenu()">Features</a>
+        <a href="#how-it-works" class="text-lg font-medium py-2" onclick="closeMobileMenu()">How It Works</a>
+        <a href="#pricing" class="text-lg font-medium py-2" onclick="closeMobileMenu()">Pricing</a>
+        <div class="section-divider my-4"></div>
+        <button onclick="showView('login-view'); closeMobileMenu();" class="btn-outline w-full py-3 text-sm font-semibold">Sign In</button>
+        <button onclick="showView('register-view'); closeMobileMenu();" class="btn-primary w-full py-3 text-sm font-semibold">Get Started</button>
+      </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden">
+      <div class="absolute inset-0 grid-pattern opacity-30"></div>
+      <div class="relative max-w-6xl mx-auto px-6 py-20 lg:py-32">
+        <div class="max-w-3xl">
+          <span class="hero-animate hero-animate-delay-1 inline-block px-4 py-1.5 bg-accent-light text-accent text-xs font-semibold uppercase tracking-wider mb-6">
+            AI-Powered Financial Guardian
+          </span>
+          <h1 class="hero-animate hero-animate-delay-2 text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6">
+            Protect Your Money<br>
+            <span class="gradient-text">Detect Fraud Instantly</span>
+          </h1>
+          <p class="hero-animate hero-animate-delay-3 text-lg md:text-xl text-secondary max-w-xl mb-8 leading-relaxed">
+            Upload your bank statements and let AI analyze patterns, detect anomalies,
+            and keep your finances safe. No more surprises.
+          </p>
+          <div class="hero-animate hero-animate-delay-4 flex flex-col sm:flex-row gap-4">
+            <button onclick="showView('register-view')" class="btn-primary px-8 py-4 text-base font-semibold">
+              Start Free Trial
+            </button>
+            <button onclick="showView('login-view')" class="btn-secondary px-8 py-4 text-base font-semibold">
+              Watch Demo
+            </button>
+          </div>
+          <div class="hero-animate hero-animate-delay-4 flex items-center gap-8 mt-10 pt-10 border-t border-custom">
+            <div>
+              <p class="text-2xl font-bold">50K+</p>
+              <p class="text-sm text-secondary">Users Protected</p>
+            </div>
+            <div>
+              <p class="text-2xl font-bold">$2.3M</p>
+              <p class="text-sm text-secondary">Fraud Prevented</p>
+            </div>
+            <div>
+              <p class="text-2xl font-bold">99.9%</p>
+              <p class="text-sm text-secondary">Accuracy Rate</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="border-t border-custom">
+      <div class="max-w-6xl mx-auto px-6 py-20">
+        <div class="text-center mb-16 animate-on-scroll">
+          <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">
+            Everything You Need to Stay Safe
+          </h2>
+          <p class="text-lg text-secondary max-w-2xl mx-auto">
+            Powerful AI tools that work together to protect your financial health.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-children">
+          <!-- Feature 1 -->
+          <div class="feature-card border border-custom p-8">
+            <span class="feature-number text-5xl font-extrabold text-border-color">01</span>
+            <h3 class="text-xl font-bold mt-4 mb-3">Anomaly Detection</h3>
+            <p class="text-secondary leading-relaxed">
+              Our AI learns your spending patterns and instantly flags anything unusual.
+              Get alerts before fraud happens.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="feature-card border border-custom p-8">
+            <span class="feature-number text-5xl font-extrabold text-border-color">02</span>
+            <h3 class="text-xl font-bold mt-4 mb-3">Smart Categorization</h3>
+            <p class="text-secondary leading-relaxed">
+              Automatically categorize transactions across all accounts.
+              See exactly where your money goes.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="feature-card border border-custom p-8">
+            <span class="feature-number text-5xl font-extrabold text-border-color">03</span>
+            <h3 class="text-xl font-bold mt-4 mb-3">Receipt Matching</h3>
+            <p class="text-secondary leading-relaxed">
+              Match transactions with email receipts automatically.
+              Never lose track of a purchase again.
+            </p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div class="feature-card border border-custom p-8">
+            <span class="feature-number text-5xl font-extrabold text-border-color">04</span>
+            <h3 class="text-xl font-bold mt-4 mb-3">Subscription Tracker</h3>
+            <p class="text-secondary leading-relaxed">
+              Find all your recurring charges. Get reminded before renewals.
+              Cancel what you don't need.
+            </p>
+          </div>
+
+          <!-- Feature 5 -->
+          <div class="feature-card border border-custom p-8">
+            <span class="feature-number text-5xl font-extrabold text-border-color">05</span>
+            <h3 class="text-xl font-bold mt-4 mb-3">Cross-Account View</h3>
+            <p class="text-secondary leading-relaxed">
+              See your complete financial picture in one place.
+              Bank, wallet, and cards all connected.
+            </p>
+          </div>
+
+          <!-- Feature 6 -->
+          <div class="feature-card border border-custom p-8">
+            <span class="feature-number text-5xl font-extrabold text-border-color">06</span>
+            <h3 class="text-xl font-bold mt-4 mb-3">Weekly Reports</h3>
+            <p class="text-secondary leading-relaxed">
+              Get personalized insights delivered to your inbox.
+              Understand your spending habits better.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="border-t border-custom bg-secondary">
+      <div class="max-w-6xl mx-auto px-6 py-20">
+        <div class="text-center mb-16 animate-on-scroll">
+          <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">
+            Simple. Secure. Powerful.
+          </h2>
+          <p class="text-lg text-secondary max-w-2xl mx-auto">
+            Get started in minutes. Your data is encrypted and secure.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8 stagger-children">
+          <!-- Step 1 -->
+          <div class="step-card text-center">
+            <div class="step-number w-14 h-14 mx-auto mb-6 bg-accent text-white flex items-center justify-center text-2xl font-bold">
+              1
+            </div>
+            <h3 class="text-lg font-bold mb-3">Upload Statements</h3>
+            <p class="text-secondary text-sm leading-relaxed">
+              Drag and drop your bank, wallet, or card statements.
+              We support CSV and PDF formats.
+            </p>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="step-card text-center">
+            <div class="step-number w-14 h-14 mx-auto mb-6 bg-accent text-white flex items-center justify-center text-2xl font-bold">
+              2
+            </div>
+            <h3 class="text-lg font-bold mb-3">AI Analyzes</h3>
+            <p class="text-secondary text-sm leading-relaxed">
+              Our AI processes your data, learns your patterns,
+              and identifies potential issues.
+            </p>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="step-card text-center">
+            <div class="step-number w-14 h-14 mx-auto mb-6 bg-accent text-white flex items-center justify-center text-2xl font-bold">
+              3
+            </div>
+            <h3 class="text-lg font-bold mb-3">Stay Protected</h3>
+            <p class="text-secondary text-sm leading-relaxed">
+              Get alerts, insights, and reports.
+              Review everything at your convenience.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="border-t border-custom">
+      <div class="max-w-6xl mx-auto px-6 py-20">
+        <div class="text-center mb-16 animate-on-scroll">
+          <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">
+            Simple, Transparent Pricing
+          </h2>
+          <p class="text-lg text-secondary">
+            Start free. Upgrade when you need more.
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto stagger-children">
+          <!-- Free Plan -->
+          <div class="pricing-card border border-custom p-8">
+            <h3 class="text-lg font-bold mb-2">Free</h3>
+            <p class="text-secondary text-sm mb-6">For personal use</p>
+            <p class="text-4xl font-extrabold mb-6">
+              $0<span class="text-base font-normal text-secondary">/mo</span>
+            </p>
+            <ul class="space-y-3 mb-8">
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Connect 1 account</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>100 transactions/month</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Basic anomaly detection</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Weekly email report</span>
+              </li>
+            </ul>
+            <button onclick="showView('register-view')" class="btn-outline w-full py-3 text-sm font-semibold">
+              Get Started
+            </button>
+          </div>
+
+          <!-- Pro Plan -->
+          <div class="pricing-card featured border-2 border-primary p-8 relative">
+            <span class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary-brand text-white text-xs font-bold uppercase">
+              Popular
+            </span>
+            <h3 class="text-lg font-bold mb-2">Pro</h3>
+            <p class="text-secondary text-sm mb-6">For power users</p>
+            <p class="text-4xl font-extrabold mb-6">
+              $9<span class="text-base font-normal text-secondary">/mo</span>
+            </p>
+            <ul class="space-y-3 mb-8">
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Unlimited accounts</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Unlimited transactions</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Advanced AI detection</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Receipt matching</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Priority support</span>
+              </li>
+            </ul>
+            <button onclick="showView('register-view')" class="btn-primary w-full py-3 text-sm font-semibold">
+              Start Free Trial
+            </button>
+          </div>
+
+          <!-- Team Plan -->
+          <div class="pricing-card border border-custom p-8">
+            <h3 class="text-lg font-bold mb-2">Team</h3>
+            <p class="text-secondary text-sm mb-6">For families & small teams</p>
+            <p class="text-4xl font-extrabold mb-6">
+              $19<span class="text-base font-normal text-secondary">/mo</span>
+            </p>
+            <ul class="space-y-3 mb-8">
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Up to 5 members</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Everything in Pro</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Shared dashboards</span>
+              </li>
+              <li class="text-sm text-secondary flex items-start gap-2">
+                <span class="text-positive font-bold">+</span>
+                <span>Family alerts</span>
+              </li>
+            </ul>
+            <button onclick="showView('register-view')" class="btn-outline w-full py-3 text-sm font-semibold">
+              Contact Sales
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="border-t border-custom">
+      <div class="max-w-6xl mx-auto px-6 py-20">
+        <div class="border border-custom bg-secondary p-12 lg:p-16 text-center animate-on-scroll">
+          <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-4">
+            Ready to Guardian Your Finances?
+          </h2>
+          <p class="text-lg text-secondary mb-8 max-w-lg mx-auto">
+            Join 50,000+ users who trust Wealify to protect their financial life.
+          </p>
+          <button onclick="showView('register-view')" class="btn-primary px-10 py-4 text-base font-semibold">
+            Get Started Free
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-custom">
+      <div class="max-w-6xl mx-auto px-6 py-12">
+        <div class="grid md:grid-cols-4 gap-8 mb-10">
+          <div>
+            <span class="text-xl font-bold tracking-tight block mb-4">Wealify</span>
+            <p class="text-sm text-secondary">
+              AI-powered financial guardian. Protecting your money, one transaction at a time.
+            </p>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold mb-4 uppercase tracking-wider">Product</h4>
+            <ul class="space-y-2">
+              <li><a href="#features" class="text-sm text-secondary hover:text-primary link-underline">Features</a></li>
+              <li><a href="#pricing" class="text-sm text-secondary hover:text-primary link-underline">Pricing</a></li>
+              <li><a href="#" class="text-sm text-secondary hover:text-primary link-underline">Security</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold mb-4 uppercase tracking-wider">Company</h4>
+            <ul class="space-y-2">
+              <li><a href="#" class="text-sm text-secondary hover:text-primary link-underline">About</a></li>
+              <li><a href="#" class="text-sm text-secondary hover:text-primary link-underline">Blog</a></li>
+              <li><a href="#" class="text-sm text-secondary hover:text-primary link-underline">Contact</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold mb-4 uppercase tracking-wider">Legal</h4>
+            <ul class="space-y-2">
+              <li><a href="#" class="text-sm text-secondary hover:text-primary link-underline">Privacy</a></li>
+              <li><a href="#" class="text-sm text-secondary hover:text-primary link-underline">Terms</a></li>
+              <li><a href="#" class="text-sm text-secondary hover:text-primary link-underline">Cookies</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="section-divider mb-6"></div>
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+          <span class="text-xs text-tertiary">2026 Wealify. Cross-Border AI Innovation Hackathon WLF-01.</span>
+          <div class="flex gap-6">
+            <a href="#" class="text-xs text-tertiary hover:text-primary link-underline">Twitter</a>
+            <a href="#" class="text-xs text-tertiary hover:text-primary link-underline">GitHub</a>
+            <a href="#" class="text-xs text-tertiary hover:text-primary link-underline">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== LOGIN PAGE ==================== -->
+  <div id="login-view" class="view">
+    <div class="min-h-screen flex items-center justify-center p-6">
+      <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8 animate-on-scroll">
+          <button onclick="showView('landing-view')" class="text-2xl font-bold tracking-tight mb-2">Wealify</button>
+          <p class="text-secondary">Sign in to your account</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="border border-custom bg-secondary p-8 animate-on-scroll" style="animation-delay: 100ms;">
+          <form id="login-form" class="space-y-5">
+            <div class="form-group">
+              <input type="email" id="login-email" class="input-field" placeholder=" " required>
+              <label for="login-email" class="input-label">Email address</label>
+            </div>
+
+            <div class="form-group">
+              <input type="password" id="login-password" class="input-field" placeholder=" " required>
+              <label for="login-password" class="input-label">Password</label>
+            </div>
+
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" class="accent-[var(--accent)]">
+                <span class="text-sm text-secondary">Remember me</span>
+              </label>
+              <a href="#" class="text-sm text-accent hover:underline">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold">
+              Sign In
+            </button>
+          </form>
+
+          <div class="relative section-divider my-6">
+            <span class="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-secondary px-3 text-xs text-tertiary uppercase tracking-wider">
+              or
+            </span>
+          </div>
+
+          <button class="btn-outline w-full py-3 text-sm font-semibold flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+        </div>
+
+        <p class="text-center mt-6 text-sm text-secondary animate-on-scroll">
+          Don't have an account?
+          <button onclick="showView('register-view')" class="text-accent font-semibold hover:underline">
+            Sign up free
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== REGISTER PAGE ==================== -->
+  <div id="register-view" class="view">
+    <div class="min-h-screen flex items-center justify-center p-6">
+      <div class="w-full max-w-md">
+        <!-- Logo -->
+        <div class="text-center mb-8 animate-on-scroll">
+          <button onclick="showView('landing-view')" class="text-2xl font-bold tracking-tight mb-2">Wealify</button>
+          <p class="text-secondary">Create your free account</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="border border-custom bg-secondary p-8 animate-on-scroll" style="animation-delay: 100ms;">
+          <form id="register-form" class="space-y-5">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="form-group">
+                <input type="text" id="register-firstname" class="input-field" placeholder=" " required>
+                <label for="register-firstname" class="input-label">First name</label>
+              </div>
+              <div class="form-group">
+                <input type="text" id="register-lastname" class="input-field" placeholder=" " required>
+                <label for="register-lastname" class="input-label">Last name</label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <input type="email" id="register-email" class="input-field" placeholder=" " required>
+              <label for="register-email" class="input-label">Email address</label>
+            </div>
+
+            <div class="form-group">
+              <input type="password" id="register-password" class="input-field" placeholder=" " required minlength="8">
+              <label for="register-password" class="input-label">Password</label>
+            </div>
+
+            <p class="text-xs text-tertiary">
+              Must be at least 8 characters
+            </p>
+
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" class="mt-0.5" required>
+              <span class="text-sm text-secondary">
+                I agree to the
+                <a href="#" class="text-accent hover:underline">Terms</a>
+                and
+                <a href="#" class="text-accent hover:underline">Privacy Policy</a>
+              </span>
+            </label>
+
+            <button type="submit" class="btn-primary w-full py-3 text-sm font-semibold">
+              Create Account
+            </button>
+          </form>
+
+          <div class="relative section-divider my-6">
+            <span class="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-secondary px-3 text-xs text-tertiary uppercase tracking-wider">
+              or
+            </span>
+          </div>
+
+          <button class="btn-outline w-full py-3 text-sm font-semibold flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+        </div>
+
+        <p class="text-center mt-6 text-sm text-secondary animate-on-scroll">
+          Already have an account?
+          <button onclick="showView('login-view')" class="text-accent font-semibold hover:underline">
+            Sign in
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== DASHBOARD PAGE ==================== -->
+  <div id="dashboard-view" class="view">
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 border-b border-custom bg-secondary/80 backdrop-blur-xl">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="flex items-center justify-between h-14">
+          <div class="flex items-center gap-6">
+            <span class="text-xl font-bold tracking-tight">Wealify</span>
+            <span class="hidden md:block text-xs font-medium text-tertiary uppercase tracking-widest">Dashboard</span>
+          </div>
+
+          <div class="hidden md:flex items-center gap-8">
+            <a href="#" class="nav-link active">Overview</a>
+            <a href="#" class="nav-link">Transactions</a>
+            <a href="#" class="nav-link">Reports</a>
+            <a href="#" class="nav-link">Alerts</a>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button id="dashboard-theme-toggle" class="btn-ghost px-3 py-2 text-sm font-medium">
+              <span class="hidden dark:inline">Light</span>
+              <span class="inline dark:hidden">Dark</span>
+            </button>
+
+            <button class="relative p-2 -mr-2">
+              <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+              <span class="notification-badge absolute top-1 right-1 bg-negative text-white rounded-full">3</span>
+            </button>
+
+            <button onclick="showView('landing-view'); logout();" class="btn-ghost px-3 py-2 text-sm font-medium">
+              Sign Out
+            </button>
+
+            <div class="w-8 h-8 bg-tertiary border border-custom flex items-center justify-center">
+              <span class="text-xs font-bold">AC</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <main class="max-w-6xl mx-auto px-6 py-10">
+      <!-- Header -->
+      <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10 animate-on-scroll">
+        <div>
+          <h1 class="text-3xl lg:text-4xl font-extrabold tracking-tight mb-2">
+            Good morning, Alex
+          </h1>
+          <p class="text-secondary">August 2026 - Your financial overview</p>
+        </div>
+        <div class="flex gap-3">
+          <button class="btn-primary px-5 py-2.5 text-sm font-semibold">
+            Upload Statement
+          </button>
+          <button class="btn-outline px-5 py-2.5 text-sm font-semibold">
+            Generate Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-border-color border-y border-custom mb-10 stagger-children">
+        <div class="bg-secondary p-6">
+          <span class="text-xs font-semibold text-tertiary uppercase tracking-wider">Income</span>
+          <p class="text-3xl font-bold mt-2 mb-1">+$8,420</p>
+          <span class="text-xs text-positive">+12.5% vs last month</span>
+        </div>
+        <div class="bg-secondary p-6">
+          <span class="text-xs font-semibold text-tertiary uppercase tracking-wider">Expenses</span>
+          <p class="text-3xl font-bold mt-2 mb-1">-$3,180</p>
+          <span class="text-xs text-negative">+8.3% vs last month</span>
+        </div>
+        <div class="bg-secondary p-6">
+          <span class="text-xs font-semibold text-tertiary uppercase tracking-wider">Net Balance</span>
+          <p class="text-3xl font-bold mt-2 mb-1">$12,847</p>
+          <span class="text-xs text-secondary">Across all accounts</span>
+        </div>
+        <div class="bg-secondary p-6">
+          <span class="text-xs font-semibold text-tertiary uppercase tracking-wider">Anomalies</span>
+          <p class="text-3xl font-bold mt-2 mb-1">3</p>
+          <span class="text-xs text-warning">Requires attention</span>
+        </div>
+      </div>
+
+      <!-- Upload Section -->
+      <div class="mb-10 animate-on-scroll">
+        <h2 class="text-xs font-semibold text-tertiary uppercase tracking-widest mb-4">Connect Accounts</h2>
+        <div class="grid md:grid-cols-3 gap-4">
+          <button class="card-hover bg-secondary border border-custom p-6 text-left">
+            <span class="text-sm font-semibold block mb-1">Bank Account</span>
+            <span class="text-xs text-secondary">Upload statement to connect</span>
+          </button>
+          <button class="card-hover bg-secondary border border-custom p-6 text-left">
+            <span class="text-sm font-semibold block mb-1">Digital Wallet</span>
+            <span class="text-xs text-secondary">Link PayPal, Venmo, etc.</span>
+          </button>
+          <button class="card-hover bg-secondary border border-custom p-6 text-left">
+            <span class="text-sm font-semibold block mb-1">Credit Card</span>
+            <span class="text-xs text-secondary">Connect card statement</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Grid -->
+      <div class="grid lg:grid-cols-5 gap-8 mb-10">
+        <!-- Transaction List -->
+        <div class="lg:col-span-3 animate-on-scroll">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xs font-semibold text-tertiary uppercase tracking-widest">Recent Transactions</h2>
+            <button class="text-xs font-medium text-accent hover:underline link-underline">View all</button>
+          </div>
+
+          <div class="flex gap-1 mb-4">
+            <button class="tab-pill active">All</button>
+            <button class="tab-pill btn-ghost">Income</button>
+            <button class="tab-pill btn-ghost">Expenses</button>
+            <button class="tab-pill btn-ghost">Flagged</button>
+          </div>
+
+          <div class="border-t border-custom">
+            <!-- Transaction: Flagged -->
+            <div class="list-item border-b border-custom p-4 flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="status-dot bg-warning"></span>
+                <div>
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-sm font-semibold">Unknown Merchant</span>
+                    <span class="badge bg-warning-light text-warning">Review</span>
+                  </div>
+                  <span class="text-xs text-secondary">Today, 2:30 PM - Card ending 4242</span>
+                </div>
+              </div>
+              <span class="text-sm font-bold text-warning">-$450.00</span>
+            </div>
+
+            <!-- Transaction: Expense -->
+            <div class="list-item border-b border-custom p-4 flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="status-dot bg-negative"></span>
+                <div>
+                  <span class="text-sm font-semibold block mb-0.5">Amazon</span>
+                  <span class="text-xs text-secondary">Today, 11:15 AM - Card ending 4242</span>
+                </div>
+              </div>
+              <span class="text-sm font-semibold">-$89.99</span>
+            </div>
+
+            <!-- Transaction: Income -->
+            <div class="list-item border-b border-custom p-4 flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="status-dot bg-positive"></span>
+                <div>
+                  <span class="text-sm font-semibold block mb-0.5">Salary Deposit</span>
+                  <span class="text-xs text-secondary">Yesterday, 9:00 AM - Account ****6789</span>
+                </div>
+              </div>
+              <span class="text-sm font-bold text-positive">+$4,250.00</span>
+            </div>
+
+            <!-- Transaction: Subscription -->
+            <div class="list-item border-b border-custom p-4 flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="status-dot bg-accent"></span>
+                <div>
+                  <div class="flex items-center gap-2 mb-0.5">
+                    <span class="text-sm font-semibold">Netflix</span>
+                    <span class="badge bg-accent-light text-accent">Recurring</span>
+                  </div>
+                  <span class="text-xs text-secondary">Aug 15 - Auto-renewal</span>
+                </div>
+              </div>
+              <span class="text-sm font-semibold">-$15.99</span>
+            </div>
+
+            <!-- Transaction: Expense -->
+            <div class="list-item border-b border-custom p-4 flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="status-dot bg-tertiary"></span>
+                <div>
+                  <span class="text-sm font-semibold block mb-0.5">Starbucks</span>
+                  <span class="text-xs text-secondary">Aug 14, 10:15 AM - Card ending 4242</span>
+                </div>
+              </div>
+              <span class="text-sm font-semibold">-$6.50</span>
+            </div>
+
+            <!-- Transaction: Transfer -->
+            <div class="list-item p-4 flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="status-dot bg-tertiary"></span>
+                <div>
+                  <span class="text-sm font-semibold block mb-0.5">Wire Transfer</span>
+                  <span class="text-xs text-secondary">Aug 13, 3:45 PM - Account ****6789</span>
+                </div>
+              </div>
+              <span class="text-sm font-semibold">-$200.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- AI Chat -->
+          <div class="animate-on-scroll">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xs font-semibold text-tertiary uppercase tracking-widest">AI Assistant</h2>
+              <span class="text-[10px] font-medium text-positive uppercase tracking-wider">Online</span>
+            </div>
+
+            <div class="border border-custom bg-secondary" style="height: 340px; display: flex; flex-direction: column;">
+              <div class="flex-1 p-4 overflow-y-auto space-y-4">
+                <div class="flex gap-3">
+                  <span class="text-[10px] font-bold text-accent mt-1">AI</span>
+                  <div class="flex-1">
+                    <p class="text-sm text-secondary leading-relaxed">I've analyzed your August statements. Found 3 items that need your attention.</p>
+                  </div>
+                </div>
+
+                <div class="flex gap-3 justify-end">
+                  <div class="max-w-[80%]">
+                    <p class="text-sm bg-tertiary px-3 py-2">Show me the anomalies</p>
+                  </div>
+                </div>
+
+                <div class="flex gap-3">
+                  <span class="text-[10px] font-bold text-accent mt-1">AI</span>
+                  <div class="flex-1">
+                    <p class="text-sm text-secondary mb-2">Flagged transactions:</p>
+                    <ul class="text-sm text-secondary space-y-1.5">
+                      <li class="flex items-start gap-2">
+                        <span class="text-warning font-bold">-</span>
+                        <span><strong>$450</strong> to Unknown Merchant</span>
+                      </li>
+                      <li class="flex items-start gap-2">
+                        <span class="text-warning font-bold">-</span>
+                        <span><strong>$89.99</strong> to Amazon</span>
+                      </li>
+                      <li class="flex items-start gap-2">
+                        <span class="text-accent font-bold">-</span>
+                        <span><strong>$15.99</strong> Netflix subscription</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-3 border-t border-custom">
+                <div class="flex gap-2">
+                  <input type="text" placeholder="Ask about your finances..." class="input-field flex-1 px-3 py-2 text-sm">
+                  <button class="btn-primary px-4 py-2 text-sm font-semibold">Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spending Breakdown -->
+          <div class="animate-on-scroll">
+            <h2 class="text-xs font-semibold text-tertiary uppercase tracking-widest mb-4">Spending Breakdown</h2>
+            <div class="border border-custom bg-secondary p-5">
+              <div class="space-y-4 mb-6">
+                <div>
+                  <div class="flex justify-between text-sm mb-2">
+                    <span>Shopping</span>
+                    <span class="font-semibold">$420</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill bg-positive" style="width: 42%;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-sm mb-2">
+                    <span>Food & Dining</span>
+                    <span class="font-semibold">$285</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill bg-warning" style="width: 28%;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-sm mb-2">
+                    <span>Transport</span>
+                    <span class="font-semibold">$180</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill bg-accent" style="width: 18%;"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-sm mb-2">
+                    <span>Subscriptions</span>
+                    <span class="font-semibold">$95</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-fill bg-tertiary" style="width: 9%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="animate-on-scroll">
+        <h2 class="text-xs font-semibold text-tertiary uppercase tracking-widest mb-4">Quick Actions</h2>
+        <div class="grid md:grid-cols-4 gap-4">
+          <button class="card-hover border border-custom bg-secondary p-5 text-left">
+            <span class="text-sm font-semibold block mb-1">Upload Statement</span>
+            <span class="text-xs text-secondary">Add a new account</span>
+          </button>
+          <button class="card-hover border border-custom bg-secondary p-5 text-left">
+            <span class="text-sm font-semibold block mb-1">View Reports</span>
+            <span class="text-xs text-secondary">See your analysis</span>
+          </button>
+          <button class="card-hover border border-custom bg-secondary p-5 text-left">
+            <span class="text-sm font-semibold block mb-1">Review Alerts</span>
+            <span class="text-xs text-secondary">3 pending items</span>
+          </button>
+          <button class="card-hover border border-custom bg-secondary p-5 text-left">
+            <span class="text-sm font-semibold block mb-1">Export Data</span>
+            <span class="text-xs text-secondary">Download CSV</span>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-custom mt-10">
+      <div class="max-w-6xl mx-auto px-6 py-8">
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+          <span class="text-sm text-secondary">2026 Wealify. Your financial guardian.</span>
+          <div class="flex gap-6">
+            <a href="#" class="text-sm text-secondary hover:text-primary link-underline">Privacy</a>
+            <a href="#" class="text-sm text-secondary hover:text-primary link-underline">Terms</a>
+            <a href="#" class="text-sm text-secondary hover:text-primary link-underline">Support</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==================== JAVASCRIPT ==================== -->
+  <script>
+    // ============================================
+    // VIEW MANAGEMENT
+    // ============================================
+    function showView(viewId) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Trigger animations for new view
+      setTimeout(() => {
+        initScrollAnimations();
+      }, 100);
+
+      // Close mobile menu if open
+      document.getElementById('mobile-menu').classList.add('hidden');
+    }
+
+    // ============================================
+    // THEME TOGGLE
+    // ============================================
+    function initThemeToggle(buttonId) {
+      const btn = document.getElementById(buttonId);
+      if (btn) {
+        btn.addEventListener('click', () => {
+          document.documentElement.classList.toggle('dark');
+          const isDark = document.documentElement.classList.contains('dark');
+          localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        });
+      }
+    }
+
+    initThemeToggle('landing-theme-toggle');
+    initThemeToggle('dashboard-theme-toggle');
+
+    // Check saved theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+
+    // ============================================
+    // MOBILE MENU
+    // ============================================
+    document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+      document.getElementById('mobile-menu').classList.remove('hidden');
+    });
+
+    document.getElementById('mobile-menu-close').addEventListener('click', () => {
+      closeMobileMenu();
+    });
+
+    function closeMobileMenu() {
+      document.getElementById('mobile-menu').classList.add('hidden');
+    }
+
+    // ============================================
+    // FORM SUBMISSIONS
+    // ============================================
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      showView('dashboard-view');
+    });
+
+    document.getElementById('register-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      showView('dashboard-view');
+    });
+
+    function logout() {
+      showView('landing-view');
+    }
+
+    // ============================================
+    // TAB SWITCHING
+    // ============================================
+    document.querySelectorAll('.tab-pill').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const parent = e.target.closest('.flex.gap-1');
+        if (parent) {
+          parent.querySelectorAll('.tab-pill').forEach(t => {
+            t.classList.remove('active');
+            if (!t.classList.contains('btn-ghost')) {
+              t.classList.add('btn-ghost');
+            }
+          });
+        }
+        e.target.classList.add('active');
+        e.target.classList.remove('btn-ghost');
+      });
+    });
+
+    // ============================================
+    // SCROLL ANIMATIONS
+    // ============================================
+    function initScrollAnimations() {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+            }
+          });
+        },
+        { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+      );
+
+      document.querySelectorAll('.animate-on-scroll, .stagger-children').forEach(el => {
+        observer.observe(el);
+      });
+    }
+
+    // Initialize on load
+    initScrollAnimations();
+
+    // ============================================
+    // SMOOTH SCROLL FOR ANCHOR LINKS
+    // ============================================
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        if (href !== '#' && href.length > 1) {
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
