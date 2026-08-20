@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+.env
+
+# Build
+.next/
+build/
+dist/
+
+# Database
+*.db
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
