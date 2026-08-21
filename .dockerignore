@@ -1,0 +1,17 @@
+node_modules
+.next
+__pycache__
+*.py[cod]
+.venv
+venv/
+.git
+.gitignore
+.env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache
+.coverage
+.impeccable
+.claude
