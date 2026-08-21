@@ -6,6 +6,7 @@ import {
   AIChatPanel,
   DisputeModal,
   VariantSwitcher,
+  VariantSidebar,
   VariantLinear,
   VariantBento,
   VariantTerminal,
@@ -14,7 +15,7 @@ import {
 } from '@/components/dashboard'
 
 export default function DashboardPage() {
-  const [currentVariant, setCurrentVariant] = useState<DashboardVariantId>('linear')
+  const [currentVariant, setCurrentVariant] = useState<DashboardVariantId>('sidebar')
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
   const [activeAnomaly, setActiveAnomaly] = useState<AnomalyItem | null>(null)
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false)
@@ -26,28 +27,37 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col font-sans">
-      {/* ── Global Shell Header ── */}
-      <DashboardHeader
-        onUploadClick={() => {
-          alert('Tính năng tải sao kê đang sẵn sàng trên cả 3 giao diện.')
-        }}
-        onExportClick={() => {
-          alert('Tính năng xuất báo cáo PDF tài chính chuẩn CFO đang khởi tạo...')
-        }}
-        onAIChatClick={() => setIsAIChatOpen(!isAIChatOpen)}
-        isChatOpen={isAIChatOpen}
-        notificationCount={2}
-      />
+      {/* ── Global Header (for Linear, Bento, Terminal variants) ── */}
+      {currentVariant !== 'sidebar' && (
+        <DashboardHeader
+          onUploadClick={() => {
+            alert('Tính năng tải sao kê đang sẵn sàng trên giao diện.')
+          }}
+          onExportClick={() => {
+            alert('Tính năng xuất báo cáo PDF tài chính chuẩn CFO đang khởi tạo...')
+          }}
+          onAIChatClick={() => setIsAIChatOpen(!isAIChatOpen)}
+          isChatOpen={isAIChatOpen}
+          notificationCount={2}
+        />
+      )}
 
       {/* ── Main Workspace ── */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Interactive 3-Variant Switcher Bar */}
+        {/* Interactive Variant Switcher Bar */}
         <VariantSwitcher
           currentVariant={currentVariant}
           onSelectVariant={setCurrentVariant}
         />
 
         {/* ── Render Active Variant ── */}
+        {currentVariant === 'sidebar' && (
+          <VariantSidebar
+            onDisputeClick={handleDisputeClick}
+            onAIChatOpen={() => setIsAIChatOpen(true)}
+          />
+        )}
+
         {currentVariant === 'linear' && (
           <VariantLinear
             onDisputeClick={handleDisputeClick}
@@ -70,14 +80,16 @@ export default function DashboardPage() {
         )}
       </main>
 
-      {/* ── Slide-Over AI Financial Guardian Assistant ── */}
-      <AIChatPanel
-        isOpen={isAIChatOpen}
-        onClose={() => setIsAIChatOpen(false)}
-      />
+      {/* ── Slide-Over AI Financial Guardian Assistant (for Top-bar modes) ── */}
+      {currentVariant !== 'sidebar' && (
+        <AIChatPanel
+          isOpen={isAIChatOpen}
+          onClose={() => setIsAIChatOpen(false)}
+        />
+      )}
 
       {/* ── Backdrop for Mobile AI Chat ── */}
-      {isAIChatOpen && (
+      {isAIChatOpen && currentVariant !== 'sidebar' && (
         <div
           onClick={() => setIsAIChatOpen(false)}
           className="fixed inset-0 bg-neutral-900/30 backdrop-blur-xs z-30 sm:hidden animate-in fade-in duration-200"

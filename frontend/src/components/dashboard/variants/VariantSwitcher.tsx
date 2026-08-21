@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-export type DashboardVariantId = 'linear' | 'bento' | 'terminal'
+export type DashboardVariantId = 'sidebar' | 'linear' | 'bento' | 'terminal'
 
 export interface VariantSwitcherProps {
   currentVariant: DashboardVariantId
@@ -16,23 +16,24 @@ export function VariantSwitcher({
   className = '',
 }: VariantSwitcherProps) {
   const variants: Array<{ id: DashboardVariantId; label: string; tag: string }> = [
-    { id: 'linear', label: '1. Linear Minimalist', tag: 'Thoáng · Gọn' },
-    { id: 'bento', label: '2. Bento Studio', tag: 'Apple · Khối' },
-    { id: 'terminal', label: '3. Financial Terminal', tag: 'Chuyên gia · Dữ liệu' },
+    { id: 'sidebar', label: 'Sidebar & Header (Đề xuất)', tag: 'Stripe / SaaS' },
+    { id: 'linear', label: 'Linear Minimalist', tag: 'Thoáng · Gọn' },
+    { id: 'bento', label: 'Bento Studio', tag: 'Apple · Khối' },
+    { id: 'terminal', label: 'Financial Terminal', tag: 'Chuyên gia' },
   ]
 
   return (
     <div
-      className={`bg-neutral-900 text-white rounded-2xl p-2 sm:p-2.5 shadow-2xl border border-neutral-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${className}`}
+      className={`bg-neutral-900 text-white rounded-2xl p-2.5 shadow-2xl border border-neutral-700/80 flex flex-col xl:flex-row xl:items-center justify-between gap-3 ${className}`}
     >
-      <div className="flex items-center gap-2.5 px-3">
+      <div className="flex items-center gap-2.5 px-2">
         <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
         <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-          Chế độ giao diện (3 Phiên bản)
+          Chế độ giao diện (Thử nghiệm 4 Bố cục)
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5 p-1 bg-neutral-800 rounded-xl text-xs">
+      <div className="flex items-center gap-1.5 p-1 bg-neutral-800 rounded-xl text-xs overflow-x-auto">
         {variants.map((v) => {
           const isActive = currentVariant === v.id
           return (
@@ -40,7 +41,7 @@ export function VariantSwitcher({
               key={v.id}
               type="button"
               onClick={() => onSelectVariant(v.id)}
-              className={`px-3 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+              className={`px-3 py-2 rounded-lg font-semibold whitespace-nowrap transition-all flex items-center gap-2 ${
                 isActive
                   ? 'bg-primary text-white shadow-xs scale-[1.02]'
                   : 'text-neutral-300 hover:text-white hover:bg-neutral-700/60'
