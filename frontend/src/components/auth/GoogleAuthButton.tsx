@@ -29,11 +29,12 @@ export function GoogleAuthButton({
 }: GoogleAuthButtonProps) {
   const [internalLoading, setInternalLoading] = useState(false)
 
-  // Initialize real Google OAuth flow
+  // Real Google OAuth 2.0 Token Client Login
   const triggerGoogleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setInternalLoading(true)
       try {
+        // Send real Google access_token to backend for userinfo verification
         const authData = await authApi.googleAuth({
           access_token: tokenResponse.access_token,
         })
@@ -49,12 +50,10 @@ export function GoogleAuthButton({
       }
     },
     onError: (errorResponse) => {
-      // If client ID is demo/unconfigured or user closes popup, fallback to onClick handler
-      if (onClick) {
-        onClick()
-      } else {
-        onError?.(errorResponse.error_description || 'Đăng nhập Google thất bại.')
-      }
+      const errorDetail =
+        errorResponse.error_description ||
+        'Đăng nhập Google bị hủy hoặc chưa cấu hình Client ID hợp lệ trong .env.'
+      onError?.(errorDetail)
     },
   })
 
@@ -63,10 +62,14 @@ export function GoogleAuthButton({
       onClick()
       return
     }
+
     try {
       triggerGoogleLogin()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Không thể khởi tạo đăng nhập Google.'
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Không thể khởi tạo popup Google OAuth. Vui lòng kiểm tra NEXT_PUBLIC_GOOGLE_CLIENT_ID.'
       onError?.(msg)
     }
   }

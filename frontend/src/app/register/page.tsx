@@ -21,7 +21,6 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [showTermsModal, setShowTermsModal] = useState(false)
@@ -56,32 +55,6 @@ export default function RegisterPage() {
 
   const strength = getPasswordStrength()
   const isPasswordMatch = Boolean(password && confirmPassword && password === confirmPassword)
-
-  const handleGoogleAuth = async () => {
-    setIsGoogleLoading(true)
-    setErrorMessage('')
-    try {
-      const res = await authApi.googleAuth({
-        email: 'nguyen.a.demo@gmail.com',
-        full_name: 'Nguyễn Văn A (Google)',
-        google_id: 'google-demo-123456',
-      })
-      setFullName(res.user.full_name || 'Nguyễn Văn A')
-      setEmail(res.user.email)
-      setIsSuccess(true)
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Đăng ký với Google không thành công.'
-      if (msg.includes('Không thể kết nối')) {
-        setFullName('Nguyễn Văn A (Google Demo)')
-        setEmail('nguyen.a.demo@gmail.com')
-        setIsSuccess(true)
-      } else {
-        setErrorMessage(msg)
-      }
-    } finally {
-      setIsGoogleLoading(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -214,16 +187,14 @@ export default function RegisterPage() {
           />
         ) : (
           <>
-            {/* Google OAuth Button */}
+            {/* Real Google OAuth Button */}
             <GoogleAuthButton
-              isLoading={isGoogleLoading}
               onSuccess={(authData) => {
-                setFullName(authData.user.full_name || 'Nguyễn Văn A')
+                setFullName(authData.user.full_name || authData.user.email.split('@')[0])
                 setEmail(authData.user.email)
                 setIsSuccess(true)
               }}
               onError={(err) => setErrorMessage(err)}
-              onClick={handleGoogleAuth}
               buttonText="Tiếp tục với Google"
               dividerText="Hoặc đăng ký bằng email"
             />
@@ -387,7 +358,7 @@ export default function RegisterPage() {
                   type="submit"
                   variant="primary"
                   size="lg"
-                  disabled={isLoading || isGoogleLoading}
+                  disabled={isLoading}
                   className="w-full justify-center min-h-[48px] text-sm uppercase tracking-wider font-bold shadow-[0_2px_10px_rgba(255,107,26,0.3)]"
                 >
                   {isLoading ? (

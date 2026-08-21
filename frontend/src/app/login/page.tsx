@@ -17,7 +17,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [showForgotModal, setShowForgotModal] = useState(false)
@@ -29,29 +28,6 @@ export default function LoginPage() {
   const rememberId = useId()
   const forgotEmailId = useId()
 
-  const handleGoogleAuth = async () => {
-    setIsGoogleLoading(true)
-    setErrorMessage('')
-    try {
-      const res = await authApi.googleAuth({
-        email: 'nguyen.a.demo@gmail.com',
-        full_name: 'Nguyễn Văn A (Google)',
-        google_id: 'google-demo-123456',
-      })
-      setEmail(res.user.email)
-      setIsSuccess(true)
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Đăng nhập với Google không thành công.'
-      if (msg.includes('Không thể kết nối')) {
-        setEmail('nguyen.a.demo@gmail.com')
-        setIsSuccess(true)
-      } else {
-        setErrorMessage(msg)
-      }
-    } finally {
-      setIsGoogleLoading(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -218,15 +194,13 @@ export default function LoginPage() {
           />
         ) : (
           <>
-            {/* Google OAuth Button */}
+            {/* Real Google OAuth Button */}
             <GoogleAuthButton
-              isLoading={isGoogleLoading}
               onSuccess={(authData) => {
                 setEmail(authData.user.email)
                 setIsSuccess(true)
               }}
               onError={(err) => setErrorMessage(err)}
-              onClick={handleGoogleAuth}
               buttonText="Tiếp tục với Google"
               dividerText="Hoặc đăng nhập bằng email"
             />
@@ -297,7 +271,7 @@ export default function LoginPage() {
                   type="submit"
                   variant="primary"
                   size="lg"
-                  disabled={isLoading || isGoogleLoading}
+                  disabled={isLoading}
                   className="w-full justify-center min-h-[48px] text-sm uppercase tracking-wider font-bold shadow-[0_2px_10px_rgba(255,107,26,0.3)]"
                 >
                   {isLoading ? (
