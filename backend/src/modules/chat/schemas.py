@@ -122,6 +122,14 @@ class UserContext(BaseModel):
         default_factory=ReconciliationStatus
     )
     financial_summary: FinancialSummary = Field(default_factory=FinancialSummary)
+    ml_anomaly_summary: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Summary from TransactionAnomalyDetector ML model including risk tiers"
+    )
+    ml_anomalies: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Detected anomalies from ML model with risk_tier, anomaly_score"
+    )
     generated_at: datetime = Field(default_factory=datetime.utcnow)
 
     @property

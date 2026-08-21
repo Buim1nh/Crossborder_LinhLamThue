@@ -42,10 +42,63 @@ BLOCKED_PATTERNS: list[tuple[str, str]] = [
     (r"\bkhieu\s*nai\b", "action_complaint"),
     (r"\b(chargeback|doi\s+tien|doi\s+lai\s+tien)\b", "action_complaint"),
     (r"\bbao\s*cao\s+(shop|nguoi\s*ban|merchant)\b", "action_complaint"),
-    (r"\btai\s*khoan\s+(nay\s+)?(co\s+)?an\s*toan\b", "assurance_safety"),
+    # Allow arbitrary filler between "tai khoan" and "an toan" so that
+    # "tài khoản CỦA TÔI CÓ an toàn không" matches, not just "tài khoản này".
+    (r"\btai\s*khoan\s+.{0,15}?an\s*toan\b", "assurance_safety"),
     (r"\bco\s+bi\s+(hack|lua|scam|lua\s*dao)\s+khong\b", "assurance_safety"),
     (r"\b(chuyen|thanh\s*toan|rut)\s+tien\s+(giup|ho|dum)\b", "action_money_move"),
+    # ...and the same verbs WITHOUT the word "tien" ("thanh toán hộ mình").
+    (r"\b(chuyen|thanh\s*toan|rut)\s+(giup|dum)\b", "action_money_move"),
+    # "ho" needs a pronoun after it, otherwise legitimate compounds like
+    # "thanh toán hộ gia đình" (household payment) would be blocked.
+    (
+        r"\b(chuyen|thanh\s*toan|rut)\s+ho\s+(minh|toi|tui|em|anh|chi)\b",
+        "action_money_move",
+    ),
 ]
+
+
+# ============================================================================
+# GUIDANCE ALLOWLIST  (evaluated against the blocked patterns above)
+# ============================================================================
+# The blocklist matches KEYWORDS, but the thing we actually want to stop is an
+# INTENT: "do this for me". Asking "how do I cancel this myself?" is exactly
+# what the system prompt invites the user to ask (rule 5) and what the decline
+# messages offer — so it must not be refused.
+#
+# When a message hits an overridable rule AND looks like a how-to question AND
+# contains no delegation phrase, it is allowed through to the LLM, which is
+# still bound by the system prompt's "never act on the user's behalf" rule.
+GUIDANCE_PATTERNS: list[str] = [
+    r"\blam\s+sao\b",
+    r"\blam\s+the\s+nao\b",
+    r"\bnhu\s+the\s+nao\b",
+    r"\bbang\s+cach\s+nao\b",
+    r"\bcach\s+(de\s+)?(huy|khieu\s*nai|doi\s+tien|bao\s*cao|lam)\b",
+    r"\bhuong\s*dan\b",
+    r"\b(o|cho)\s+dau\b",
+    r"\bcho\s+nao\b",
+    r"\bbao\s+lau\b",
+    r"\bkhi\s+nao\b",
+    r"\bhan\s+(khieu\s*nai|chot|cuoi|xu\s*ly)\b",
+    r"\bnen\s+(lam|huy|khieu\s*nai)\b",
+    r"\b(quy\s*trinh|thu\s*tuc)\b",
+]
+
+# Explicit "do it for me" phrasing. Its presence cancels the guidance
+# override, so "làm sao huỷ giúp mình" stays blocked.
+DELEGATION_PATTERNS: list[str] = [
+    r"\b(giup|ho|dum|gium)\s+(minh|toi|tui|em|anh|chi)\b",
+    r"\bthay\s+(minh|toi|tui|em)\b",
+    r"\b(giup|dum|gium)\s*$",
+]
+
+# Only intents that are safe to EXPLAIN can be rescued by the allowlist.
+# Safety assurances and money movement are never explained away.
+GUIDANCE_OVERRIDABLE_REASONS: frozenset[str] = frozenset(
+    {"action_cancel", "action_complaint"}
+)
+
 
 # Polite decline messages keyed by reason code.
 DECLINE_MESSAGES: dict[str, str] = {

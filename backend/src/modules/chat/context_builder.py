@@ -13,9 +13,11 @@ What we gather (per the module spec):
   - subscriptions (active recurring charges)
   - reconciliation_status (email-match tallies)
   - financial_summary (spending / income / fees / net)
+  - ml_anomaly_analysis (TransactionAnomalyDetector results from trained model)
 """
+import logging
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,10 +37,55 @@ from src.modules.chat.schemas import (
     UserContext,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def _fmt_date(value: Optional[datetime]) -> Optional[str]:
     """Render a datetime as YYYY-MM-DD, tolerating None."""
     return value.strftime("%Y-%m-%d") if value else None
+
+
+async def _get_ml_anomaly_analysis(
+    transactions: list[Transaction],
+) -> Optional[dict[str, Any]]:
+    """
+    Run TransactionAnomalyDetector on transactions if the model is available.
+
+    Returns anomaly analysis from the trained ML model, including:
+    - Summary statistics
+    - Detected anomalies with risk tiers
+    """
+    try:
+        from src.modules.ml.predictors.transaction_anomaly import TransactionAnomalyPredictor
+
+        # Convert transactions to dict format expected by the model
+        tx_dicts = []
+        for t in transactions:
+            tx_dict = {
+                "So_tien": t.amount,
+                "Thoi_gian": t.transaction_date.isoformat() if t.transaction_date else None,
+                "Loai_giao_dich": t.type.value if t.type else None,
+                "Noi_dung_chuyen_khoan": t.description or "",
+                "So_du": 0.0,  # Not available in basic Transaction model
+                "Phi": 0.0,
+                "Ty_gia": 1.0,
+            }
+            tx_dicts.append(tx_dict)
+
+        if not tx_dicts:
+            return None
+
+        predictor = TransactionAnomalyPredictor()
+        if not predictor.loaded:
+            logger.info("TransactionAnomalyDetector not loaded, skipping ML analysis")
+            return None
+
+        result = predictor.predict(tx_dicts)
+        return result
+
+    except Exception as exc:
+        logger.warning("ML anomaly analysis failed: %s", exc)
+        return None
 
 
 def _scope_to_user(query, user_id: Optional[int]):
@@ -75,6 +122,20 @@ async def build_user_context(
     result = await db.execute(query)
     transactions: list[Transaction] = list(result.scalars().all())
 
+    # Run ML anomaly analysis if model is available
+    ml_result = await _get_ml_anomaly_analysis(transactions)
+    ml_summary = None
+    ml_anomalies = []
+    if ml_result:
+        ml_summary = {
+            "total_transactions": ml_result.get("summary", {}).get("total_transactions", 0),
+            "anomalies_detected": ml_result.get("summary", {}).get("anomalies_detected", 0),
+            "anomaly_rate": ml_result.get("summary", {}).get("anomaly_rate", "0%"),
+            "tier_distribution": ml_result.get("summary", {}).get("tier_distribution", {}),
+            "model_version": ml_result.get("model_version", "unknown"),
+        }
+        ml_anomalies = ml_result.get("anomalies", [])
+
     return UserContext(
         user_id=user_id,
         recent_transactions=_recent(transactions),
@@ -82,6 +143,8 @@ async def build_user_context(
         subscriptions=_subscriptions(transactions),
         reconciliation_status=_reconciliation(transactions),
         financial_summary=_summary(transactions),
+        ml_anomaly_summary=ml_summary,
+        ml_anomalies=ml_anomalies,
     )
 
 

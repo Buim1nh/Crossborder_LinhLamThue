@@ -76,8 +76,76 @@ def test_safe_messages_pass(message):
     assert verdict.allowed is True, f"should pass: {message} ({verdict.reason})"
 
 
+# ---------------------------------------------------------------------------
+# Under-blocking regressions: phrasings that slipped past the first blocklist
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "message,expected_reason",
+    [
+        # "tài khoản" and "an toàn" separated by an arbitrary clause.
+        ("tài khoản của tôi có an toàn không", "assurance_safety"),
+        ("tài khoản này an toàn chứ", "assurance_safety"),
+        ("tôi có bị lừa đảo không", "assurance_safety"),
+        # Delegation verbs beyond "chuyển tiền".
+        ("thanh toán hộ mình", "action_money_move"),
+        ("rút tiền dùm mình", "action_money_move"),
+        ("đòi lại tiền giúp mình", "action_complaint"),
+        ("báo cáo shop này", "action_complaint"),
+        ("huỷ thuê bao", "action_cancel"),
+    ],
+)
+def test_delegation_variants_are_blocked(message, expected_reason):
+    """Paraphrases of a delegation request must not slip through."""
+    verdict = check_message(message)
+    assert verdict.allowed is False, f"should be blocked: {message}"
+    assert verdict.reason == expected_reason
+
+
+# ---------------------------------------------------------------------------
+# Over-blocking regressions: how-to questions the system prompt invites
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "làm sao để huỷ gói Netflix",
+        "cách huỷ gói Spotify là gì",
+        "tôi nên khiếu nại ở đâu",
+        "quy trình khiếu nại như thế nào",
+        "hạn khiếu nại của giao dịch này là bao lâu",
+    ],
+)
+def test_guidance_questions_are_allowed(message):
+    """
+    Asking HOW to cancel/dispute is in scope — the assistant explains the
+    steps, the user performs them. Only "do it for me" is refused.
+    """
+    verdict = check_message(message)
+    assert verdict.allowed is True, f"should pass: {message} ({verdict.reason})"
+
+
+@pytest.mark.parametrize(
+    "message,expected_reason",
+    [
+        # A delegation phrase overrides guidance wording.
+        ("làm sao huỷ gói giúp mình", "action_cancel"),
+        ("hướng dẫn khiếu nại thay tôi", "action_complaint"),
+        # Guidance never rescues safety assurance or moving money.
+        ("làm sao biết tài khoản của tôi có an toàn không", "assurance_safety"),
+        ("hướng dẫn chuyển tiền giúp mình", "action_money_move"),
+    ],
+)
+def test_guidance_does_not_rescue_delegation(message, expected_reason):
+    """The allowlist must not become a bypass for the blocklist."""
+    verdict = check_message(message)
+    assert verdict.allowed is False, f"should be blocked: {message}"
+    assert verdict.reason == expected_reason
+
+
 def test_normalize_strips_diacritics():
     assert normalize("Huỷ Gói  Netflix") == "huy goi netflix"
+
     assert normalize("Đặt lịch") == "dat lich"
     assert normalize("") == ""
 

@@ -19,3 +19,20 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# ML model artifacts - trained offline, not versioned in git.
+# The .gitkeep is kept so the directory survives a clone.
+backend/src/modules/ml/artifacts/*
+!backend/src/modules/ml/artifacts/.gitkeep
+
+# ML checkpoints for inference - binaries stay out of git, but the folder
+# structure and its README are versioned so a fresh clone knows where to
+# drop the .joblib files.
+checkpoints/*
+!checkpoints/.gitkeep
+!checkpoints/README.md
+!checkpoints/archive/
+checkpoints/archive/*
+!checkpoints/archive/.gitkeep
+
+

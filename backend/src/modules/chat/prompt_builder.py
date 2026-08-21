@@ -124,6 +124,40 @@ def build_context_block(context: UserContext) -> str:
         f"| Nghi vấn: {rec.suspicious} | Chưa đối soát: {rec.unchecked}"
     )
 
+    # --- ML Anomaly Analysis (TransactionAnomalyDetector) -----------------
+    if context.ml_anomaly_summary:
+        lines.append("\n[Phân tích bất thường bằng ML (TransactionAnomalyDetector)]")
+        ml = context.ml_anomaly_summary
+        lines.append(f"- Tổng giao dịch phân tích: {ml.get('total_transactions', 'N/A')}")
+        lines.append(f"- Bất thường phát hiện: {ml.get('anomalies_detected', 0)}")
+        lines.append(f"- Tỷ lệ bất thường: {ml.get('anomaly_rate', 'N/A')}")
+
+        tier_dist = ml.get("tier_distribution", {})
+        if tier_dist:
+            tier_lines = []
+            for tier in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "NORMAL"]:
+                count = tier_dist.get(tier, 0)
+                if count > 0:
+                    tier_lines.append(f"{tier}: {count}")
+            if tier_lines:
+                lines.append(f"- Phân bổ mức rủi ro: {', '.join(tier_lines)}")
+
+        lines.append(f"- Model version: {ml.get('model_version', 'unknown')}")
+
+    if context.ml_anomalies:
+        lines.append("\n[Chi tiết giao dịch bất thường từ ML]")
+        for i, anomaly in enumerate(context.ml_anomalies[:10]):  # Limit to top 10
+            score = anomaly.get("anomaly_score", 0)
+            tier = anomaly.get("risk_tier", "UNKNOWN")
+            amount = anomaly.get("So_tien", "N/A")
+            desc = anomaly.get("Noi_dung_chuyen_khoan", "") or anomaly.get("Loai_giao_dich", "N/A")
+            lines.append(
+                f"- Giao dịch #{i+1}: {amount} | Mức: {tier} | "
+                f"Điểm: {score:.4f} | {desc}"
+            )
+        if len(context.ml_anomalies) > 10:
+            lines.append(f"- ... và {len(context.ml_anomalies) - 10} giao dịch bất thường khác")
+
     return "\n".join(lines)
 
 

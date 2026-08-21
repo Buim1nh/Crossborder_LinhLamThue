@@ -1,0 +1,12 @@
+# Trained model artifacts (*.joblib) are written here by the training scripts.
+#
+# The files themselves are intentionally NOT committed: they are large binaries
+# that bloat git history, and a pickle is tied to the exact library versions
+# that produced it. Build them locally or fetch them in CI/deploy.
+#
+# Expected filenames (see config.py):
+#   categorizer.joblib     - text pipeline exposing predict_proba
+#   anomaly_scorer.joblib  - estimator exposing score_samples
+#
+# With no artifacts present the module runs on heuristics, which is a fully
+# supported mode - nothing here is required for the API to work.

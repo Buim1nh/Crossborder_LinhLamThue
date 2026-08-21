@@ -10,8 +10,14 @@ services:
     environment:
       - DATABASE_URL=sqlite+aiosqlite:///./wealify.db
       - DEBUG=true
+      # Serve ML checkpoints from the mounted volume below rather than the
+      # in-source default (backend/src/modules/ml/artifacts).
+      - ML_ARTIFACT_DIR=/app/checkpoints
     volumes:
       - ./backend:/app
+      # Read-only: inference must never mutate a checkpoint.
+      - ./checkpoints:/app/checkpoints:ro
+
     command: uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
   frontend:
