@@ -1,0 +1,65 @@
+# ==============================================================================
+# Multi-Stage Optimized Slim Dockerfile for Wealify Backend (FastAPI)
+# Root Dockerfile for Zero-Config Render / Cloud Deployments
+# ==============================================================================
+
+# ── Stage 1: Builder (Dependency Compilation & Virtualenv) ───────────────────
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+# Install build dependencies for compiling binary packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Create virtualenv, install dependencies, and purge installation caches
+COPY backend/requirements.txt .
+RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --no-cache-dir --upgrade pip && \
+    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt && \
+    find /opt/venv -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true && \
+    find /opt/venv -type f -name "*.pyc" -delete && \
+    find /opt/venv -type f -name "*.pyo" -delete && \
+    rm -rf /root/.cache /root/.cargo
+
+# ── Stage 2: Final Runner (Ultra-Slim Production Runtime) ────────────────────
+FROM python:3.11-slim AS runner
+
+# Production Python runtime environment
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Install minimal runtime dependencies (curl for healthchecks only) & clean apt caches
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/* \
+    && useradd --create-home --home-dir /home/appuser --shell /bin/bash -u 10001 appuser
+
+# Copy virtual environment from builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Copy backend application source code
+COPY --chown=appuser:appuser backend/ .
+
+# Purge any local Python caches and configure non-root ownership
+RUN find /app -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true && \
+    find /app -type f -name "*.pyc" -delete && \
+    chown -R appuser:appuser /app
+
+# Switch to unprivileged user
+USER appuser
+
+EXPOSE 8000
+
+# Healthcheck for Render container monitoring
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT:-8000}/api/health || exit 1
+
+# Start Uvicorn with dynamic PORT binding for Render ($PORT) and local Docker (8000)
+CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
