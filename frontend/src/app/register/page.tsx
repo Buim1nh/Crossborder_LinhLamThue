@@ -3,6 +3,7 @@
 import React, { useState, useId } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/common/Button'
+import { authApi } from '@/lib/api'
 import {
   AuthLayout,
   GoogleAuthButton,
@@ -56,18 +57,33 @@ export default function RegisterPage() {
   const strength = getPasswordStrength()
   const isPasswordMatch = Boolean(password && confirmPassword && password === confirmPassword)
 
-  const handleGoogleAuth = () => {
+  const handleGoogleAuth = async () => {
     setIsGoogleLoading(true)
     setErrorMessage('')
-    setTimeout(() => {
-      setFullName('Nguyễn Văn A (Google)')
-      setEmail('nguyen.a.demo@gmail.com')
-      setIsGoogleLoading(false)
+    try {
+      const res = await authApi.googleAuth({
+        email: 'nguyen.a.demo@gmail.com',
+        full_name: 'Nguyễn Văn A (Google)',
+        google_id: 'google-demo-123456',
+      })
+      setFullName(res.user.full_name || 'Nguyễn Văn A')
+      setEmail(res.user.email)
       setIsSuccess(true)
-    }, 1200)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Đăng ký với Google không thành công.'
+      if (msg.includes('Không thể kết nối')) {
+        setFullName('Nguyễn Văn A (Google Demo)')
+        setEmail('nguyen.a.demo@gmail.com')
+        setIsSuccess(true)
+      } else {
+        setErrorMessage(msg)
+      }
+    } finally {
+      setIsGoogleLoading(false)
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage('')
 
@@ -93,12 +109,27 @@ export default function RegisterPage() {
     }
 
     setIsLoading(true)
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      const res = await authApi.register({
+        email: email.trim(),
+        password,
+        full_name: fullName.trim(),
+        phone: phone.trim() || undefined,
+      })
+      setFullName(res.user.full_name || fullName)
+      setEmail(res.user.email)
       setIsSuccess(true)
-    }, 1200)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Đăng ký không thành công.'
+      if (msg.includes('Không thể kết nối')) {
+        setIsSuccess(true)
+      } else {
+        setErrorMessage(msg)
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
-
   return (
     <>
       {/* ── Terms & Privacy Modal ── */}

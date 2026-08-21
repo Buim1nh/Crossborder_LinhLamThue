@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -24,12 +24,10 @@ class Settings(BaseSettings):
     IMAP_USER: str = ""
     IMAP_PASSWORD: str = ""
     
-    # Security
-    SECRET_KEY: str = "change-me-in-production"
+    # Security: 64-byte default key for HMAC-SHA256
+    SECRET_KEY: str = "wealify-ai-financial-guardian-secret-key-2026-hackathon-security-token-64bytes"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
 
 @lru_cache()

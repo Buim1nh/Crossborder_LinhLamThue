@@ -1,30 +1,29 @@
 import pytest
-from httpx import AsyncClient, ASGITransport
-from src.api.main import app
+from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_health_check():
+async def test_health_check(transport):
     """Test health check endpoint."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/api/health")
         assert response.status_code == 200
         assert response.json()["status"] == "healthy"
 
 
 @pytest.mark.asyncio
-async def test_root():
+async def test_root(transport):
     """Test root endpoint."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/")
         assert response.status_code == 200
         assert "Wealify" in response.json()["message"]
 
 
 @pytest.mark.asyncio
-async def test_get_transactions_empty():
+async def test_get_transactions_empty(transport):
     """Test getting transactions when database is empty."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/api/transactions")
         assert response.status_code == 200
         data = response.json()
