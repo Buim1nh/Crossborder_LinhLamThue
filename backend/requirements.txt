@@ -1,11 +1,11 @@
 # FastAPI & Server
-fastapi==0.109.2
-uvicorn[standard]==0.27.1
-python-multipart==0.0.9
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32
 
 # Database
-sqlalchemy==2.0.25
-aiosqlite==0.19.0
+sqlalchemy==2.0.52
+aiosqlite==0.22.1
 
 # Data parsing
 pandas==2.2.1
@@ -14,20 +14,23 @@ pypdf==4.1.0
 
 # Email
 imap-tools==1.5.0
+email-validator==2.3.0
 
-# Security
-python-dotenv==1.0.1
-bcrypt==4.1.2
+# Security & Auth
+python-dotenv==1.2.3
+bcrypt==5.0.0
+pyjwt==2.13.0
+
+# ML - subscription detection model (see ml/README.md)
+catboost>=1.2
+scikit-learn>=1.4
+pyyaml>=6.0
 
 # Utilities
-pydantic==2.6.1
-pydantic-settings==2.1.0
-
-# LLM (placeholder - to be configured)
-# anthropic==0.18.0
-# openai==1.12.0
+pydantic==2.13.4
+pydantic-settings==2.15.0
 
 # Testing
-pytest==8.0.0
-pytest-asyncio==0.23.4
-httpx==0.26.0
+pytest==9.1.1
+pytest-asyncio==1.4.0
+httpx==0.28.1

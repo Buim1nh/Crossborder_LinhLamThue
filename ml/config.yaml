@@ -1,0 +1,54 @@
+# ════════════════════════════════════════════════════════════════════════
+# Cau hinh pipeline phat hien SUBSCRIPTION — nguon su that duy nhat.
+# Moi thay doi tham so deu di qua file nay de tai lap duoc ket qua.
+# ════════════════════════════════════════════════════════════════════════
+project: wealify-subscription-detector
+
+target:
+  column: label
+  positive_class: SUBSCRIPTION
+
+data:
+  # Tap huan luyen: du lieu thuc te da gan nhan (golden dataset).
+  train: subscription_labels.csv
+  # Tap tham chieu: CHI dung de audit ro ri / do drift. KHONG train tren no —
+  # xem ml/README.md, train tren tap nay cho MCC = 0.00 tren golden.
+  reference: data/raw/synthetic_200k_labels.csv
+
+features:
+  # robust      : mo ta -> CatBoost text_features (tong quat hoa merchant moi)
+  # categorical : mo ta -> categorical nguyen chuoi (memorize)
+  # nodesc      : bo mo ta
+  # withleak    : them cot email bi ro ri (chi de kiem chung, KHONG deploy)
+  mode: robust
+
+split:
+  strategy: stratified   # stratified | time
+  test_size: 0.20
+  valid_size: 0.15
+  cv_folds: 5
+  seed: 42
+
+model:
+  iterations: 1500
+  learning_rate: 0.05
+  depth: 6
+  l2_leaf_reg: 3.0
+  auto_class_weights: Balanced
+  od_wait: 150
+  eval_metric: "PRAUC:use_weights=false"
+
+threshold:
+  strategy: max_mcc      # max_mcc | max_f1 | fixed
+  value: null            # chi dung khi strategy = fixed
+
+# Cong chat luong — `promote` tu choi neu khong dat.
+gates:
+  min_mcc: 0.90
+  min_precision: 0.85
+  min_recall: 0.85
+  max_train_test_mcc_gap: 0.10   # chan overfit
+  max_cv_std: 0.05               # chan ket qua khong on dinh
+
+registry:
+  dir: ml/registry
