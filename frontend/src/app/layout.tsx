@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { DM_Sans, Oswald } from 'next/font/google'
 import './globals.css'
+import { GoogleAuthProvider } from '@/components/auth/GoogleAuthProvider'
 
 const dmSans = DM_Sans({
   subsets: ['latin', 'latin-ext'],
@@ -33,7 +34,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className={`${dmSans.variable} ${oswald.variable}`}>
-      <body>{children}</body>
+      <body>
+        <GoogleAuthProvider>{children}</GoogleAuthProvider>
+      </body>
     </html>
   )
 }

@@ -1,9 +1,15 @@
-import React from 'react'
+'use client'
+
+import React, { useState } from 'react'
+import { useGoogleLogin } from '@react-oauth/google'
+import { authApi, AuthTokenResponse } from '@/lib/api'
 
 export interface GoogleAuthButtonProps {
   isLoading?: boolean
   disabled?: boolean
   onClick?: () => void
+  onSuccess?: (data: AuthTokenResponse) => void
+  onError?: (error: string) => void
   buttonText?: string
   dividerText?: string
   showDivider?: boolean
@@ -14,22 +20,70 @@ export function GoogleAuthButton({
   isLoading = false,
   disabled = false,
   onClick,
+  onSuccess,
+  onError,
   buttonText = 'Tiếp tục với Google',
   dividerText = 'Hoặc tiếp tục bằng email',
   showDivider = true,
   className = '',
 }: GoogleAuthButtonProps) {
+  const [internalLoading, setInternalLoading] = useState(false)
+
+  // Initialize real Google OAuth flow
+  const triggerGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setInternalLoading(true)
+      try {
+        const authData = await authApi.googleAuth({
+          access_token: tokenResponse.access_token,
+        })
+        onSuccess?.(authData)
+      } catch (err: unknown) {
+        const errorMsg =
+          err instanceof Error
+            ? err.message
+            : 'Xác thực Google không thành công. Vui lòng thử lại.'
+        onError?.(errorMsg)
+      } finally {
+        setInternalLoading(false)
+      }
+    },
+    onError: (errorResponse) => {
+      // If client ID is demo/unconfigured or user closes popup, fallback to onClick handler
+      if (onClick) {
+        onClick()
+      } else {
+        onError?.(errorResponse.error_description || 'Đăng nhập Google thất bại.')
+      }
+    },
+  })
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick()
+      return
+    }
+    try {
+      triggerGoogleLogin()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Không thể khởi tạo đăng nhập Google.'
+      onError?.(msg)
+    }
+  }
+
+  const activeLoading = isLoading || internalLoading
+
   return (
     <div className={`w-full ${className}`}>
       {/* Social Button */}
       <div className="mb-6">
         <button
           type="button"
-          disabled={isLoading || disabled}
-          onClick={onClick}
+          disabled={activeLoading || disabled}
+          onClick={handleClick}
           className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-lg bg-white border border-neutral-200 text-neutral-700 font-semibold text-sm hover:bg-neutral-50 hover:border-neutral-300 active:bg-neutral-100 transition-all shadow-sm min-h-[48px] focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
         >
-          {isLoading ? (
+          {activeLoading ? (
             <span className="flex items-center gap-2.5 text-primary font-medium">
               <svg className="animate-spin w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

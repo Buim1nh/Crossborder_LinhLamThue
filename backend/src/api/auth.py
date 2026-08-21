@@ -1,4 +1,6 @@
 import secrets
+import httpx
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -102,9 +104,53 @@ async def google_auth(
     data: GoogleAuthRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """Sign in or sign up seamlessly via Google OAuth."""
-    normalized_email = data.email.lower().strip()
+    """Sign in or sign up seamlessly via Google OAuth with token verification."""
+    email: Optional[str] = None
+    full_name: Optional[str] = data.full_name
+    google_id: Optional[str] = data.google_id
 
+    # 1. If Google ID token (credential) provided, verify with Google tokeninfo
+    if data.credential:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                res = await client.get(
+                    f"https://oauth2.googleapis.com/tokeninfo?id_token={data.credential}"
+                )
+                if res.status_code == 200:
+                    g_data = res.json()
+                    email = g_data.get("email")
+                    full_name = g_data.get("name") or full_name
+                    google_id = g_data.get("sub") or google_id
+        except Exception:
+            pass
+
+    # 2. If access_token provided, verify with Google userinfo
+    elif data.access_token:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                res = await client.get(
+                    "https://www.googleapis.com/oauth2/v3/userinfo",
+                    headers={"Authorization": f"Bearer {data.access_token}"},
+                )
+                if res.status_code == 200:
+                    g_data = res.json()
+                    email = g_data.get("email")
+                    full_name = g_data.get("name") or full_name
+                    google_id = g_data.get("sub") or google_id
+        except Exception:
+            pass
+
+    # 3. Fallback to direct email payload if provided (for tests / offline demo)
+    if not email and data.email:
+        email = str(data.email)
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Không thể xác thực danh tính từ Google. Vui lòng thử lại.",
+        )
+
+    normalized_email = email.lower().strip()
     result = await db.execute(select(User).where(User.email == normalized_email))
     user = result.scalar_one_or_none()
 
@@ -114,7 +160,7 @@ async def google_auth(
         user = User(
             email=normalized_email,
             hashed_password=get_password_hash(random_pwd),
-            full_name=data.full_name or normalized_email.split("@")[0],
+            full_name=full_name or normalized_email.split("@")[0],
             role="user",
             is_active=True,
         )

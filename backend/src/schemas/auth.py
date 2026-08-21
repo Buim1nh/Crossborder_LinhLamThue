@@ -16,7 +16,9 @@ class UserLoginRequest(BaseModel):
 
 
 class GoogleAuthRequest(BaseModel):
-    email: EmailStr
+    credential: Optional[str] = None  # Google ID Token from One Tap / Google Login
+    access_token: Optional[str] = None  # Google OAuth2 Access Token
+    email: Optional[EmailStr] = None  # Direct email payload (demo/fallback)
     full_name: Optional[str] = None
     google_id: Optional[str] = None
 

@@ -217,6 +217,12 @@ export default function RegisterPage() {
             {/* Google OAuth Button */}
             <GoogleAuthButton
               isLoading={isGoogleLoading}
+              onSuccess={(authData) => {
+                setFullName(authData.user.full_name || 'Nguyễn Văn A')
+                setEmail(authData.user.email)
+                setIsSuccess(true)
+              }}
+              onError={(err) => setErrorMessage(err)}
               onClick={handleGoogleAuth}
               buttonText="Tiếp tục với Google"
               dividerText="Hoặc đăng ký bằng email"

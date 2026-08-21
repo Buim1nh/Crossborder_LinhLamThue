@@ -1,5 +1,6 @@
 export * from './AuthLayout'
 export * from './GoogleAuthButton'
+export * from './GoogleAuthProvider'
 export * from './AuthSuccessCard'
 export * from './AuthErrorAlert'
 export * from './AuthModal'

@@ -221,6 +221,11 @@ export default function LoginPage() {
             {/* Google OAuth Button */}
             <GoogleAuthButton
               isLoading={isGoogleLoading}
+              onSuccess={(authData) => {
+                setEmail(authData.user.email)
+                setIsSuccess(true)
+              }}
+              onError={(err) => setErrorMessage(err)}
               onClick={handleGoogleAuth}
               buttonText="Tiếp tục với Google"
               dividerText="Hoặc đăng nhập bằng email"
