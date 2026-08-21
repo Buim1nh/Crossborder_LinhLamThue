@@ -50,7 +50,7 @@ const SAMPLE_TRANSACTIONS: DashboardTransaction[] = [
     date: '15/02/2026',
     time: '02:15',
     isFlagged: true,
-    alertReason: 'Phát hiện trừ tiền trùng lặp với thẻ Techcombank Visa cùng thời điểm',
+    alertReason: 'Phát hiện trừ tiền trùng lặp với thẻ Techcombank Visa cùng ngày',
     isSubscription: true,
   },
   {
@@ -58,13 +58,13 @@ const SAMPLE_TRANSACTIONS: DashboardTransaction[] = [
     source: 'card',
     sourceName: 'Techcombank Visa',
     merchant: 'Netflix.com',
-    description: 'Recurring transaction #8829',
+    description: 'Recurring subscription #8829',
     category: 'Giải trí',
     amount: -260000,
     date: '15/02/2026',
     time: '02:16',
     isFlagged: true,
-    alertReason: 'Khoản trùng lặp 260.000₫ với Ví MoMo',
+    alertReason: 'Khoản trừ 260.000₫ trùng lặp với Ví MoMo',
     isSubscription: true,
     maskedCard: '8829',
   },
@@ -72,8 +72,8 @@ const SAMPLE_TRANSACTIONS: DashboardTransaction[] = [
     id: 'tx-4',
     source: 'bank',
     sourceName: 'Vietcombank',
-    merchant: 'EVN HCMC',
-    description: 'Thanh toán tiền điện sinh hoạt mã PE0200...',
+    merchant: 'EVN TP.HCM',
+    description: 'Hóa đơn tiền điện sinh hoạt mã PE0200...',
     category: 'Hóa đơn',
     amount: -1450000,
     date: '14/02/2026',
@@ -83,8 +83,8 @@ const SAMPLE_TRANSACTIONS: DashboardTransaction[] = [
     id: 'tx-5',
     source: 'wallet',
     sourceName: 'Ví MoMo',
-    merchant: 'GrabFood VN',
-    description: 'Đơn hàng cơm trưa văn phòng',
+    merchant: 'GrabFood Vietnam',
+    description: 'Bữa trưa văn phòng',
     category: 'Ăn uống',
     amount: -125000,
     date: '14/02/2026',
@@ -109,7 +109,7 @@ const SAMPLE_TRANSACTIONS: DashboardTransaction[] = [
     source: 'card',
     sourceName: 'Techcombank Visa',
     merchant: 'Spotify AB',
-    description: 'Gói nghe nhạc Premium cá nhân',
+    description: 'Gói nghe nhạc Premium',
     category: 'Giải trí',
     amount: -59000,
     date: '08/02/2026',
@@ -122,7 +122,7 @@ const SAMPLE_TRANSACTIONS: DashboardTransaction[] = [
     source: 'wallet',
     sourceName: 'Ví MoMo',
     merchant: 'OpenAI ChatGPT Plus',
-    description: 'Gia hạn gói thuê bao AI $20',
+    description: 'Gia hạn gói dịch vụ AI $20',
     category: 'Công việc',
     amount: -500000,
     date: '05/02/2026',
@@ -136,18 +136,22 @@ export function TransactionFeed({
   onTransactionClick,
   className = '',
 }: TransactionFeedProps) {
-  const [filterTab, setFilterTab] = useState<'all' | 'bank' | 'wallet' | 'card' | 'flagged' | 'subscription'>('all')
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'bank' | 'wallet' | 'card'>('all')
+  const [onlyFlagged, setOnlyFlagged] = useState(false)
+  const [onlySubscription, setOnlySubscription] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const filteredList = transactions.filter((tx) => {
-    // Tab filter
-    if (filterTab === 'bank' && tx.source !== 'bank') return false
-    if (filterTab === 'wallet' && tx.source !== 'wallet') return false
-    if (filterTab === 'card' && tx.source !== 'card') return false
-    if (filterTab === 'flagged' && !tx.isFlagged) return false
-    if (filterTab === 'subscription' && !tx.isSubscription) return false
+  const flaggedCount = transactions.filter((t) => t.isFlagged).length
+  const subscriptionCount = transactions.filter((t) => t.isSubscription).length
 
-    // Search query
+  const filteredList = transactions.filter((tx) => {
+    if (sourceFilter === 'bank' && tx.source !== 'bank') return false
+    if (sourceFilter === 'wallet' && tx.source !== 'wallet') return false
+    if (sourceFilter === 'card' && tx.source !== 'card') return false
+
+    if (onlyFlagged && !tx.isFlagged) return false
+    if (onlySubscription && !tx.isSubscription) return false
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       return (
@@ -180,27 +184,27 @@ export function TransactionFeed({
   }
 
   return (
-    <div className={`bg-white rounded-2xl shadow-card border border-neutral-200/80 overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-2xl shadow-card border border-neutral-200 overflow-hidden ${className}`}>
       {/* Header bar & Search */}
       <div className="p-6 border-b border-neutral-100">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="text-lg font-bold text-neutral-900 leading-tight">
-              Bảng Giao Dịch Hợp Nhất 3 Nguồn
+              Lịch Sử Giao Dịch Hợp Nhất
             </h2>
-            <p className="text-xs text-neutral-500 mt-0.5">
-              Hiển thị {filteredList.length} / {transactions.length} giao dịch đã được chuẩn hóa & gắn cờ
+            <p className="text-xs text-neutral-500 mt-1">
+              Hiển thị {filteredList.length} / {transactions.length} giao dịch đã được đối chiếu & phân loại
             </p>
           </div>
 
           {/* Search box */}
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-72">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên, mô tả..."
-              className="w-full pl-9 pr-4 py-2 rounded-lg bg-neutral-50 border border-neutral-200 text-xs text-neutral-900 focus:outline-none focus:border-primary focus:bg-white transition-all placeholder:text-neutral-400"
+              placeholder="Tìm kiếm giao dịch, danh mục..."
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-neutral-50 border border-neutral-200 text-sm text-neutral-900 focus:outline-none focus:border-primary focus:bg-white transition-all placeholder:text-neutral-400"
             />
             <svg
               className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2"
@@ -213,103 +217,124 @@ export function TransactionFeed({
           </div>
         </div>
 
-        {/* Filter Navigation Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          <button
-            type="button"
-            onClick={() => setFilterTab('all')}
-            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors ${
-              filterTab === 'all'
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            Tất cả ({transactions.length})
-          </button>
+        {/* ── Multi-Faceted Filters ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+          {/* Source Filter Segmented Control */}
+          <div className="flex items-center p-1 bg-neutral-100 rounded-lg gap-1 text-xs overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setSourceFilter('all')}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                sourceFilter === 'all'
+                  ? 'bg-white text-neutral-900 shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900'
+              }`}
+            >
+              Tất cả nguồn ({transactions.length})
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterTab('bank')}
-            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-              filterTab === 'bank'
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            🏦 Ngân hàng
-          </button>
+            <button
+              type="button"
+              onClick={() => setSourceFilter('bank')}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                sourceFilter === 'bank'
+                  ? 'bg-white text-neutral-900 shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900'
+              }`}
+            >
+              Ngân hàng
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterTab('wallet')}
-            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-              filterTab === 'wallet'
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            📱 Ví điện tử
-          </button>
+            <button
+              type="button"
+              onClick={() => setSourceFilter('wallet')}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                sourceFilter === 'wallet'
+                  ? 'bg-white text-neutral-900 shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900'
+              }`}
+            >
+              Ví điện tử
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterTab('card')}
-            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-              filterTab === 'card'
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            💳 Thẻ tín dụng
-          </button>
+            <button
+              type="button"
+              onClick={() => setSourceFilter('card')}
+              className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                sourceFilter === 'card'
+                  ? 'bg-white text-neutral-900 shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900'
+              }`}
+            >
+              Thẻ tín dụng
+            </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setFilterTab('flagged')}
-            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-              filterTab === 'flagged'
-                ? 'bg-warning text-white'
-                : 'bg-warning-light text-[#B45309] hover:bg-amber-100'
-            }`}
-          >
-            ⚠️ Bất thường ({transactions.filter((t) => t.isFlagged).length})
-          </button>
+          {/* Status Facets */}
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => setOnlyFlagged(!onlyFlagged)}
+              className={`px-3 py-1.5 rounded-md font-semibold border transition-all flex items-center gap-1.5 ${
+                onlyFlagged
+                  ? 'bg-warning text-white border-warning'
+                  : 'bg-white text-neutral-700 border-neutral-200 hover:border-warning hover:text-[#B45309]'
+              }`}
+            >
+              <span>Cảnh báo bất thường</span>
+              <span className={`px-1.5 py-0.2 rounded text-[11px] font-bold ${onlyFlagged ? 'bg-white/20 text-white' : 'bg-warning-light text-[#B45309]'}`}>
+                {flaggedCount}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setFilterTab('subscription')}
-            className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-              filterTab === 'subscription'
-                ? 'bg-primary text-white'
-                : 'bg-primary-light text-primary hover:bg-orange-100'
-            }`}
-          >
-            🔄 Định kỳ ({transactions.filter((t) => t.isSubscription).length})
-          </button>
+            <button
+              type="button"
+              onClick={() => setOnlySubscription(!onlySubscription)}
+              className={`px-3 py-1.5 rounded-md font-semibold border transition-all flex items-center gap-1.5 ${
+                onlySubscription
+                  ? 'bg-primary text-white border-primary'
+                  : 'bg-white text-neutral-700 border-neutral-200 hover:border-primary hover:text-primary'
+              }`}
+            >
+              <span>Gói định kỳ</span>
+              <span className={`px-1.5 py-0.2 rounded text-[11px] font-bold ${onlySubscription ? 'bg-white/20 text-white' : 'bg-primary-light text-primary'}`}>
+                {subscriptionCount}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Transaction List Rows */}
-      <div className="divide-y divide-neutral-100 max-h-[560px] overflow-y-auto">
+      <div className="divide-y divide-neutral-100 overflow-x-auto">
         {filteredList.length === 0 ? (
-          <div className="py-12 text-center text-neutral-400 text-sm">
-            Không tìm thấy giao dịch nào phù hợp với bộ lọc hiện tại.
+          <div className="py-16 text-center text-neutral-500 text-sm">
+            Không tìm thấy giao dịch nào phù hợp với bộ lọc.
           </div>
         ) : (
           filteredList.map((tx) => (
             <div
               key={tx.id}
+              role="button"
+              tabIndex={0}
               onClick={() => onTransactionClick?.(tx)}
-              className={`p-4 sm:px-6 hover:bg-neutral-50/80 transition-colors cursor-pointer ${
-                tx.isFlagged ? 'bg-amber-50/30' : ''
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onTransactionClick?.(tx)
+                }
+              }}
+              aria-label={`Giao dịch ${tx.merchant} ${formatVND(tx.amount)}`}
+              className={`p-4 sm:px-6 hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-inset transition-colors cursor-pointer ${
+                tx.isFlagged ? 'bg-amber-50/40' : ''
               }`}
             >
               <div className="flex items-start justify-between gap-4">
                 {/* Left: Source Tag, Merchant, and Category */}
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                   <div className="pt-0.5">
                     <span
-                      className={`inline-block px-2.5 py-0.5 text-[10px] font-bold rounded-md border ${getSourceBadgeClass(
+                      className={`inline-block px-2.5 py-1 text-xs font-semibold rounded border ${getSourceBadgeClass(
                         tx.source
                       )}`}
                     >
@@ -318,34 +343,34 @@ export function TransactionFeed({
                   </div>
 
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-bold text-neutral-900 leading-snug">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <p className="text-sm font-bold text-neutral-900">
                         {tx.merchant}
                       </p>
 
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-neutral-100 text-neutral-600">
                         {tx.category}
                       </span>
 
                       {tx.isSubscription && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-light text-primary">
-                          🔄 Định kỳ
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-primary-light text-primary">
+                          Định kỳ
                         </span>
                       )}
 
                       {tx.maskedCard && (
-                        <span className="text-[10px] text-neutral-400 font-mono">
+                        <span className="text-xs text-neutral-400 font-mono">
                           •••• {tx.maskedCard}
                         </span>
                       )}
                     </div>
 
-                    <p className="text-xs text-neutral-500 mt-0.5">{tx.description}</p>
+                    <p className="text-xs text-neutral-600 mt-1">{tx.description}</p>
 
                     {/* Inline Anomaly Callout */}
                     {tx.isFlagged && tx.alertReason && (
-                      <div className="mt-2 p-2 rounded-lg bg-warning-light/80 border border-warning/30 text-[11px] text-[#92400E] flex items-center gap-2">
-                        <span className="shrink-0 font-bold">⚠️ Cảnh báo:</span>
+                      <div className="mt-2.5 p-2.5 rounded-lg bg-warning-light/90 border border-warning/30 text-xs text-[#92400E] flex items-center gap-2">
+                        <span className="font-bold shrink-0">Lưu ý:</span>
                         <span>{tx.alertReason}</span>
                       </div>
                     )}
@@ -355,13 +380,13 @@ export function TransactionFeed({
                 {/* Right: Date, Time and Amount */}
                 <div className="text-right shrink-0">
                   <p
-                    className={`font-display text-base sm:text-lg font-bold leading-tight ${
+                    className={`text-base sm:text-lg font-bold leading-tight ${
                       tx.amount > 0 ? 'text-success' : 'text-neutral-900'
                     }`}
                   >
                     {formatVND(tx.amount)}
                   </p>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                  <p className="text-xs text-neutral-400 mt-1">
                     {tx.date} {tx.time ? `• ${tx.time}` : ''}
                   </p>
                 </div>

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { Button } from '@/components/common/Button'
+import { tokenStorage } from '@/lib/api'
 import { AnomalyItem } from './AnomalyAlertBanner'
 
 export interface DisputeModalProps {
@@ -13,8 +14,12 @@ export interface DisputeModalProps {
 
 export function DisputeModal({ isOpen, onClose, anomaly }: DisputeModalProps) {
   const [copied, setCopied] = useState(false)
+  const user = tokenStorage.getUser()
 
   if (!anomaly) return null
+
+  const userName = user?.full_name || 'Nguyễn Văn A'
+  const userPhone = user?.phone || '0988 776 655'
 
   const disputeText = `CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
 Độc lập - Tự do - Hạnh phúc
@@ -22,8 +27,8 @@ export function DisputeModal({ isOpen, onClose, anomaly }: DisputeModalProps) {
 GIẤY ĐỀ NGHỊ TRA SOÁT / KHIẾU NẠI GIAO DỊCH THẺ & VÍ
 
 Kính gửi: Trung tâm Dịch vụ Khách hàng Ngân hàng / Tổ chức phát hành thẻ
-Tôi tên là: Nguyễn Văn A
-Số điện thoại: 0988 776 655
+Tôi tên là: ${userName}
+Số điện thoại: ${userPhone}
 Số tài khoản / Thẻ ghi nợ: **** **** **** 8829
 
 NỘI DUNG YÊU CẦU TRA SOÁT:
@@ -35,7 +40,6 @@ NỘI DUNG YÊU CẦU TRA SOÁT:
 Căn cứ theo quy định thời hạn tra soát 60 ngày, tôi đề nghị Quý Ngân hàng tiến hành hoàn trả khoản tiền trừ sai quy định vào tài khoản thanh toán của tôi trong thời gian sớm nhất.
 
 Trân trọng cảm ơn!`
-
   const handleCopy = () => {
     navigator.clipboard.writeText(disputeText)
     setCopied(true)
@@ -73,7 +77,7 @@ Trân trọng cảm ơn!`
         </div>
 
         <div className="relative">
-          <pre className="p-4 rounded-xl bg-neutral-900 text-neutral-200 text-[11px] font-mono whitespace-pre-wrap leading-relaxed overflow-y-auto max-h-[260px] border border-neutral-800">
+          <pre className="p-4 rounded-xl bg-neutral-900 text-neutral-200 text-xs font-mono whitespace-pre-wrap leading-relaxed overflow-y-auto max-h-[260px] border border-neutral-800">
             {disputeText}
           </pre>
         </div>

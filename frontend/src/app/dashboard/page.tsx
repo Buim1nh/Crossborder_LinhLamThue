@@ -38,9 +38,9 @@ export default function DashboardPage() {
   })
 
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false)
   const [activeAnomaly, setActiveAnomaly] = useState<AnomalyItem | null>(null)
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false)
-  const [chatInitialPrompt, setChatInitialPrompt] = useState<string | undefined>(undefined)
 
   const handleUpload = (source: UploadSource, file: File) => {
     const formattedSize =
@@ -71,7 +71,7 @@ export default function DashboardPage() {
     setIsAnalyzing(true)
     setTimeout(() => {
       setIsAnalyzing(false)
-    }, 1500)
+    }, 1200)
   }
 
   const handleDisputeClick = (anomaly: AnomalyItem) => {
@@ -79,8 +79,8 @@ export default function DashboardPage() {
     setIsDisputeModalOpen(true)
   }
 
-  const handleAskAIClick = (anomaly: AnomalyItem) => {
-    setChatInitialPrompt(`Phân tích giúp tôi giao dịch bất thường ${anomaly.title}`)
+  const handleAskAIClick = (_anomaly: AnomalyItem) => {
+    setIsAIChatOpen(true)
   }
 
   const handleTransactionClick = (tx: DashboardTransaction) => {
@@ -88,50 +88,53 @@ export default function DashboardPage() {
       setActiveAnomaly({
         id: String(tx.id),
         title: tx.description,
-        description: tx.alertReason || 'Giao dịch được hệ thống đánh dấu cần kiểm tra.',
+        description: tx.alertReason || 'Giao dịch được đánh dấu cần kiểm tra.',
         amount: `${tx.amount.toLocaleString('vi-VN')}₫`,
         sources: [tx.sourceName],
         severity: 'high',
         date: tx.date,
         disputeDeadlineDays: 54,
       })
+      setIsDisputeModalOpen(true)
     }
   }
 
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col font-sans">
-      {/* ── Dashboard Shell Header ── */}
+      {/* ── Header ── */}
       <DashboardHeader
         onUploadClick={() => {
-          const uploadEl = document.getElementById('upload-section')
-          uploadEl?.scrollIntoView({ behavior: 'smooth' })
+          const el = document.getElementById('upload-section')
+          el?.scrollIntoView({ behavior: 'smooth' })
         }}
         onExportClick={() => {
-          alert('Chức năng xuất báo cáo PDF tài chính chuẩn CFO đang khởi tạo...')
+          alert('Tính năng xuất báo cáo PDF tài chính chuẩn CFO đang khởi tạo...')
         }}
+        onAIChatClick={() => setIsAIChatOpen(!isAIChatOpen)}
+        isChatOpen={isAIChatOpen}
         notificationCount={2}
       />
 
-      {/* ── Main Dashboard Workspace ── */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* 1. Proactive Anomaly Guardian Alert */}
+      {/* ── Main Workspace ── */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* 1. Proactive Anomaly Alert */}
         <AnomalyAlertBanner
           onDisputeClick={handleDisputeClick}
           onAskAIClick={handleAskAIClick}
         />
 
-        {/* 2. Key Analytical Summary Cards */}
+        {/* 2. Key Metrics Summary Cards */}
         <SummaryMetrics
           onAnomaliesClick={() => {
-            const tableEl = document.getElementById('transactions-section')
-            tableEl?.scrollIntoView({ behavior: 'smooth' })
+            const el = document.getElementById('transactions-section')
+            el?.scrollIntoView({ behavior: 'smooth' })
           }}
           onSubscriptionsClick={() => {
-            setChatInitialPrompt('Gợi ý hủy các gói subscription không sử dụng')
+            setIsAIChatOpen(true)
           }}
         />
 
-        {/* 3. Multi-Source Statement Upload Zones */}
+        {/* 3. 3-Source Statement Manager */}
         <section id="upload-section">
           <UploadDropzones
             files={files}
@@ -142,22 +145,25 @@ export default function DashboardPage() {
           />
         </section>
 
-        {/* 4. Core Split-Layout: Transaction Feed (Left) & AI Guardian Chat (Right) */}
-        <div id="transactions-section" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Transaction Feed & Multi-source Filters (7 cols on lg, 8 cols on xl) */}
-          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-            <TransactionFeed onTransactionClick={handleTransactionClick} />
-          </div>
-
-          {/* Right Column: AI Financial Guardian Assistant (5 cols on lg, 4 cols on xl) */}
-          <div className="lg:col-span-5 xl:col-span-4 sticky top-24">
-            <AIChatPanel
-              key={chatInitialPrompt}
-              onSendMessage={(text) => console.log('AI Query:', text)}
-            />
-          </div>
-        </div>
+        {/* 4. Full-Width Transaction Explorer */}
+        <section id="transactions-section">
+          <TransactionFeed onTransactionClick={handleTransactionClick} />
+        </section>
       </main>
+
+      {/* ── Slide-Over AI Financial Guardian Assistant ── */}
+      <AIChatPanel
+        isOpen={isAIChatOpen}
+        onClose={() => setIsAIChatOpen(false)}
+      />
+
+      {/* ── Backdrop for Mobile AI Chat ── */}
+      {isAIChatOpen && (
+        <div
+          onClick={() => setIsAIChatOpen(false)}
+          className="fixed inset-0 bg-neutral-900/30 backdrop-blur-xs z-30 sm:hidden animate-in fade-in duration-200"
+        />
+      )}
 
       {/* ── Dispute Modal Dialog ── */}
       <DisputeModal
