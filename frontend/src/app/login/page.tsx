@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useId } from 'react'
+import React, { useState, useEffect, useId } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/common/Button'
 import { authApi } from '@/lib/api'
 import {
@@ -27,8 +28,17 @@ export default function LoginPage() {
   const passwordId = useId()
   const rememberId = useId()
   const forgotEmailId = useId()
+  const router = useRouter()
 
-
+  // Automatically redirect to /dashboard after successful login
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [isSuccess, router])
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage('')
@@ -190,7 +200,7 @@ export default function LoginPage() {
               </>
             }
             buttonText="Vào không gian làm việc →"
-            buttonHref="/"
+            buttonHref="/dashboard"
           />
         ) : (
           <>

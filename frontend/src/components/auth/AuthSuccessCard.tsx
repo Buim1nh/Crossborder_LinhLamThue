@@ -15,7 +15,7 @@ export function AuthSuccessCard({
   title,
   message,
   buttonText = 'Vào không gian làm việc →',
-  buttonHref = '/',
+  buttonHref = '/dashboard',
   onButtonClick,
   className = '',
 }: AuthSuccessCardProps) {

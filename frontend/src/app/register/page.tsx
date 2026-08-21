@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useId } from 'react'
+import React, { useState, useEffect, useId } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/common/Button'
 import { authApi } from '@/lib/api'
@@ -31,8 +32,17 @@ export default function RegisterPage() {
   const passwordId = useId()
   const confirmPasswordId = useId()
   const termsId = useId()
+  const router = useRouter()
 
-  // Password requirement criteria
+  // Automatically redirect to /dashboard after successful registration
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        router.push('/dashboard')
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [isSuccess, router])
   const hasMinLength = password.length >= 8
   const hasUpperLower = /[A-Z]/.test(password) && /[a-z]/.test(password)
   const hasNumber = /\d/.test(password)
@@ -179,11 +189,11 @@ export default function RegisterPage() {
             title="ĐĂNG KÝ THÀNH CÔNG!"
             message={
               <>
-                Chào mừng <span className="font-bold text-neutral-900">{fullName}</span> ({email}) đến với Wealify. Tài khoản đã sẵn sàng để phân tích sao kê.
+                Chào mừng <span className="font-bold text-neutral-900">{fullName}</span> ({email}) đến với Wealify. Đang chuyển hướng vào không gian làm việc...
               </>
             }
-            buttonText="Bắt đầu phân tích sao kê →"
-            buttonHref="/"
+            buttonText="Vào không gian làm việc →"
+            buttonHref="/dashboard"
           />
         ) : (
           <>
