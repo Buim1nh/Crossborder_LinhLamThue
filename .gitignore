@@ -3,6 +3,10 @@ node_modules/
 __pycache__/
 *.py[cod]
 .env
+.env.local
+.env*.local
+*.sqlite
+*.sqlite3
 
 # Build
 .next/
@@ -19,3 +23,7 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+.agents
+.claude
+.impeccable
+
