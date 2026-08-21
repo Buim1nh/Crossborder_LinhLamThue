@@ -49,8 +49,8 @@ interface ApiErrorResponse {
   detail?: string | Array<{ msg?: string }>
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = rawApiUrl.replace(/\/+$/, '')
 
 const TOKEN_KEY = 'wealify_access_token'
 const USER_KEY = 'wealify_user_profile'
@@ -107,9 +107,10 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       ...options,
       headers,
     })
-  } catch {
+  } catch (err: unknown) {
+    const nativeMsg = err instanceof Error ? err.message : ''
     throw new Error(
-      'Không thể kết nối đến máy chủ backend (http://localhost:8000). Vui lòng kiểm tra lại dịch vụ.'
+      `Không thể kết nối đến máy chủ backend (${API_BASE_URL}). Vui lòng kiểm tra lại dịch vụ và CORS.${nativeMsg ? ` Chi tiết: ${nativeMsg}` : ''}`
     )
   }
 
