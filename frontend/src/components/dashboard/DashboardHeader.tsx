@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/common/Button'
-import { tokenStorage, authApi } from '@/lib/api'
+import { tokenStorage, authApi, type AuthUser } from '@/lib/api'
 
 export interface DashboardHeaderProps {
   onUploadClick?: () => void
@@ -21,7 +21,12 @@ export function DashboardHeader({
   notificationCount = 2,
 }: DashboardHeaderProps) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
-  const user = tokenStorage.getUser()
+  const [user, setUser] = useState<AuthUser | null>(null)
+
+  // Read from localStorage only after mount to avoid hydration mismatch
+  useEffect(() => {
+    setUser(tokenStorage.getUser())
+  }, [])
 
   const handleLogout = async () => {
     await authApi.logout()
