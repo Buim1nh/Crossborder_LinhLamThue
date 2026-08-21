@@ -3,109 +3,33 @@
 import React, { useState } from 'react'
 import {
   DashboardHeader,
-  UploadDropzones,
-  SummaryMetrics,
-  AnomalyAlertBanner,
-  TransactionFeed,
   AIChatPanel,
   DisputeModal,
-  UploadSource,
-  UploadedFileInfo,
+  VariantSwitcher,
+  VariantLinear,
+  VariantBento,
+  VariantTerminal,
+  DashboardVariantId,
   AnomalyItem,
-  DashboardTransaction,
 } from '@/components/dashboard'
 
 export default function DashboardPage() {
-  const [files, setFiles] = useState<Partial<Record<UploadSource, UploadedFileInfo>>>({
-    bank: {
-      name: 'Vietcombank_SaoKe_T022026.csv',
-      size: '248 KB',
-      transactionCount: 42,
-      uploadedAt: '15/02/2026',
-    },
-    wallet: {
-      name: 'MoMo_Statement_Feb2026.pdf',
-      size: '1.2 MB',
-      transactionCount: 28,
-      uploadedAt: '15/02/2026',
-    },
-    card: {
-      name: 'Techcombank_Visa_Feb2026.pdf',
-      size: '850 KB',
-      transactionCount: 19,
-      uploadedAt: '15/02/2026',
-    },
-  })
-
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [currentVariant, setCurrentVariant] = useState<DashboardVariantId>('linear')
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
   const [activeAnomaly, setActiveAnomaly] = useState<AnomalyItem | null>(null)
   const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false)
-
-  const handleUpload = (source: UploadSource, file: File) => {
-    const formattedSize =
-      file.size > 1024 * 1024
-        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-        : `${Math.round(file.size / 1024)} KB`
-
-    setFiles((prev) => ({
-      ...prev,
-      [source]: {
-        name: file.name,
-        size: formattedSize,
-        transactionCount: Math.floor(Math.random() * 20) + 15,
-        uploadedAt: new Date().toLocaleDateString('vi-VN'),
-      },
-    }))
-  }
-
-  const handleRemove = (source: UploadSource) => {
-    setFiles((prev) => {
-      const updated = { ...prev }
-      delete updated[source]
-      return updated
-    })
-  }
-
-  const handleAnalyze = () => {
-    setIsAnalyzing(true)
-    setTimeout(() => {
-      setIsAnalyzing(false)
-    }, 1200)
-  }
 
   const handleDisputeClick = (anomaly: AnomalyItem) => {
     setActiveAnomaly(anomaly)
     setIsDisputeModalOpen(true)
   }
 
-  const handleAskAIClick = (_anomaly: AnomalyItem) => {
-    setIsAIChatOpen(true)
-  }
-
-  const handleTransactionClick = (tx: DashboardTransaction) => {
-    if (tx.isFlagged) {
-      setActiveAnomaly({
-        id: String(tx.id),
-        title: tx.description,
-        description: tx.alertReason || 'Giao dịch được đánh dấu cần kiểm tra.',
-        amount: `${tx.amount.toLocaleString('vi-VN')}₫`,
-        sources: [tx.sourceName],
-        severity: 'high',
-        date: tx.date,
-        disputeDeadlineDays: 54,
-      })
-      setIsDisputeModalOpen(true)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col font-sans">
-      {/* ── Header ── */}
+      {/* ── Global Shell Header ── */}
       <DashboardHeader
         onUploadClick={() => {
-          const el = document.getElementById('upload-section')
-          el?.scrollIntoView({ behavior: 'smooth' })
+          alert('Tính năng tải sao kê đang sẵn sàng trên cả 3 giao diện.')
         }}
         onExportClick={() => {
           alert('Tính năng xuất báo cáo PDF tài chính chuẩn CFO đang khởi tạo...')
@@ -116,39 +40,34 @@ export default function DashboardPage() {
       />
 
       {/* ── Main Workspace ── */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* 1. Proactive Anomaly Alert */}
-        <AnomalyAlertBanner
-          onDisputeClick={handleDisputeClick}
-          onAskAIClick={handleAskAIClick}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Interactive 3-Variant Switcher Bar */}
+        <VariantSwitcher
+          currentVariant={currentVariant}
+          onSelectVariant={setCurrentVariant}
         />
 
-        {/* 2. Key Metrics Summary Cards */}
-        <SummaryMetrics
-          onAnomaliesClick={() => {
-            const el = document.getElementById('transactions-section')
-            el?.scrollIntoView({ behavior: 'smooth' })
-          }}
-          onSubscriptionsClick={() => {
-            setIsAIChatOpen(true)
-          }}
-        />
-
-        {/* 3. 3-Source Statement Manager */}
-        <section id="upload-section">
-          <UploadDropzones
-            files={files}
-            onUpload={handleUpload}
-            onRemove={handleRemove}
-            onAnalyze={handleAnalyze}
-            isAnalyzing={isAnalyzing}
+        {/* ── Render Active Variant ── */}
+        {currentVariant === 'linear' && (
+          <VariantLinear
+            onDisputeClick={handleDisputeClick}
+            onAIChatOpen={() => setIsAIChatOpen(true)}
           />
-        </section>
+        )}
 
-        {/* 4. Full-Width Transaction Explorer */}
-        <section id="transactions-section">
-          <TransactionFeed onTransactionClick={handleTransactionClick} />
-        </section>
+        {currentVariant === 'bento' && (
+          <VariantBento
+            onDisputeClick={handleDisputeClick}
+            onAIChatOpen={() => setIsAIChatOpen(true)}
+          />
+        )}
+
+        {currentVariant === 'terminal' && (
+          <VariantTerminal
+            onDisputeClick={handleDisputeClick}
+            onAIChatOpen={() => setIsAIChatOpen(true)}
+          />
+        )}
       </main>
 
       {/* ── Slide-Over AI Financial Guardian Assistant ── */}
