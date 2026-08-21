@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import get_settings
 from src.core.database import init_db
 from src.api import transactions_router, health_router
+from src.modules.chat import chat_router
 
 settings = get_settings()
 
@@ -37,6 +38,8 @@ app.add_middleware(
 # Include routers
 app.include_router(health_router, prefix="/api/health", tags=["Health"])
 app.include_router(transactions_router, prefix="/api/transactions", tags=["Transactions"])
+# MODULE 6: LLM Chat Interface (self-contained in src/modules/chat)
+app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 
 
 @app.get("/")
