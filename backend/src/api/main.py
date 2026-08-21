@@ -9,6 +9,7 @@ from src.api import (
     health_router,
     subscriptions_router,
     transactions_router,
+    upload_router,
 )
 
 settings = get_settings()
@@ -50,6 +51,7 @@ app.include_router(health_router, prefix="/api/health", tags=["Health"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication & Authorization"])
 app.include_router(transactions_router, prefix="/api/transactions", tags=["Transactions"])
 app.include_router(subscriptions_router, prefix="/api/subscriptions", tags=["Subscriptions"])
+app.include_router(upload_router, prefix="/api/upload", tags=["Upload"])
 @app.get("/")
 async def root():
     return {"message": "Wealify Financial Assistant API", "version": settings.APP_VERSION}

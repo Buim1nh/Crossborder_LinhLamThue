@@ -15,3 +15,17 @@ venv/
 .coverage
 .impeccable
 .claude
+
+# Frontend is built separately — not needed in backend image
+frontend/
+frontend/node_modules/
+
+# ML artifacts (large model files, local artifacts)
+ml/artifacts/
+ml/__pycache__/
+ml/pipeline/__pycache__/
+ml/registry/__pycache__/
+ml/tests/__pycache__/
+
+# Keep ml/ source for SubscriptionDetector imports
+!ml/

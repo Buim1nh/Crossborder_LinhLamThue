@@ -29,7 +29,10 @@ class Transaction(Base):
     __tablename__ = "transactions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    
+
+    # User ownership
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+
     # Source identification
     source: Mapped[str] = mapped_column(String(20))  # "account" | "wallet" | "card"
     source_id: Mapped[str] = mapped_column(String(100))  # Original ID from source

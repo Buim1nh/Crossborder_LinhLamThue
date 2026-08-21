@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create virtualenv, install dependencies, and purge all installation caches
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN python -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir --upgrade pip && \
     /opt/venv/bin/pip install --no-cache-dir -r requirements.txt && \
@@ -31,9 +31,10 @@ FROM python:3.11-slim AS runner
 # Production Python runtime environment
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PATH="/opt/venv/bin:$PATH"
+    PATH="/opt/venv/bin:$PATH" \
+    ML_ROOT=/app
 
-WORKDIR /app
+WORKDIR /app/backend
 
 # Install minimal runtime dependencies (curl for healthchecks only) & clean apt caches
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -45,8 +46,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy clean virtual environment from builder stage (no compiler or pip cache bloat)
 COPY --from=builder /opt/venv /opt/venv
 
-# Copy application source code
-COPY --chown=appuser:appuser . .
+# Copy application source code (repo root -> /app, so uvicorn runs from /app/backend)
+COPY --chown=appuser:appuser . /app
 
 # Purge any local Python caches and configure non-root ownership
 RUN find /app -type d -name "__pycache__" -prune -exec rm -rf {} + 2>/dev/null || true && \
@@ -62,5 +63,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -f http://127.0.0.1:${PORT:-8000}/api/health || exit 1
 
-# Start Uvicorn with dynamic PORT binding for Render ($PORT) and local Docker (8000)
+# Start Uvicorn from /app/backend (working dir) where src/ lives
 CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

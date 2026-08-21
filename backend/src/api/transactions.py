@@ -1,10 +1,12 @@
-from typing import Optional, List
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
+from src.api.deps import get_current_active_user
 from src.models.transaction import Transaction
+from src.models.user import User
 
 router = APIRouter()
 
@@ -17,10 +19,11 @@ async def get_transactions(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get list of parsed transactions with filters and pagination."""
-    query = select(Transaction)
-    count_query = select(func.count(Transaction.id))
+    query = select(Transaction).where(Transaction.user_id == current_user.id)
+    count_query = select(func.count(Transaction.id)).where(Transaction.user_id == current_user.id)
 
     if source:
         query = query.where(Transaction.source == source)

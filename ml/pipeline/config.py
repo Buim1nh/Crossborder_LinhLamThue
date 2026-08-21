@@ -72,7 +72,7 @@ def load_config(path: str | Path | None = None) -> Config:
     p = Path(path or DEFAULT_CONFIG)
     if not p.exists():
         raise FileNotFoundError(f"Khong tim thay config: {p}")
-    raw = yaml.safe_load(p.read_text())
+    raw = yaml.safe_load(p.read_text(encoding="utf-8"))
     missing = [s for s in REQUIRED_SECTIONS if s not in raw]
     if missing:
         raise ValueError(f"config thieu section: {missing}")

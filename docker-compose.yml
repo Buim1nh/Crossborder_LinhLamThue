@@ -3,15 +3,17 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
     environment:
       - DATABASE_URL=sqlite+aiosqlite:///./wealify.db
       - DEBUG=true
+      - ML_ROOT=/app/ml
     volumes:
       - ./backend:/app
+      - ./ml:/app/ml:ro
     command: uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 
   frontend:
@@ -27,7 +29,7 @@ services:
       - /app/node_modules
     command: npm run dev
 
-  # Pipeline ML — chay theo lenh, khong phai service chay lien tuc.
+  # Pipeline ML — chạy theo lệnh, không phải service chạy liên tục.
   #   docker compose run --rm ml train --promote
   #   docker compose run --rm ml evaluate --data subscription_labels.csv
   ml:
