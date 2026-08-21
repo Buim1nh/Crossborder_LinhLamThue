@@ -1,0 +1,48 @@
+{
+  "features": [
+    "So_tien",
+    "So_du",
+    "Phi",
+    "Ty_gia",
+    "gio",
+    "ngay_trong_tuan",
+    "ngay_trong_thang",
+    "thang",
+    "is_dem",
+    "is_cuoi_tuan",
+    "log_so_tien",
+    "ti_le_du_tien",
+    "phi_tren_tien",
+    "rec_seq",
+    "rec_ngay_ke_tu_lan_truoc",
+    "rec_lech_chu_ky_thang",
+    "rec_ti_le_tien_vs_lan_truoc",
+    "rec_ti_le_tien_vs_trung_binh",
+    "card_seq",
+    "card_lech_tien",
+    "desc_co_subscription",
+    "desc_co_chu_ky",
+    "desc_so_tu",
+    "desc_so_ky_tu",
+    "Loai_giao_dich",
+    "Trang_thai",
+    "Don_vi_tien_te",
+    "Noi_dung_text"
+  ],
+  "cat_features": [
+    "Loai_giao_dich",
+    "Trang_thai",
+    "Don_vi_tien_te"
+  ],
+  "cat_feature_indices": [
+    24,
+    25,
+    26
+  ],
+  "text_features": [
+    "Noi_dung_text"
+  ],
+  "text_feature_indices": [
+    27
+  ]
+}

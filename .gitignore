@@ -27,3 +27,12 @@ Thumbs.db
 .claude
 .impeccable
 
+# ML
+# (gitignore khong ho tro comment cuoi dong — moi comment phai o dong rieng)
+.venv/
+.pytest_cache/
+# du lieu tho tai ve, xem ml/README.md de biet cach lay lai
+data/raw/
+# output tam cua CLI (predictions, bao cao json)
+ml/artifacts/
+# ml/registry/ CO commit - de API chay duoc ngay tu ban clone

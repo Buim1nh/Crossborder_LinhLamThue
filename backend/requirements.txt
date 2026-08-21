@@ -21,6 +21,11 @@ python-dotenv==1.2.3
 bcrypt==5.0.0
 pyjwt==2.13.0
 
+# ML - subscription detection model (see ml/README.md)
+catboost>=1.2
+scikit-learn>=1.4
+pyyaml>=6.0
+
 # Utilities
 pydantic==2.13.4
 pydantic-settings==2.15.0

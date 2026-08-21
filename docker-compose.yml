@@ -26,3 +26,17 @@ services:
       - ./frontend:/app
       - /app/node_modules
     command: npm run dev
+
+  # Pipeline ML — chay theo lenh, khong phai service chay lien tuc.
+  #   docker compose run --rm ml train --promote
+  #   docker compose run --rm ml evaluate --data subscription_labels.csv
+  ml:
+    build:
+      context: .
+      dockerfile: ml/Dockerfile
+    profiles: ["ml"]
+    volumes:
+      - ./ml/registry:/app/ml/registry
+      - ./ml/artifacts:/app/ml/artifacts
+      - ./subscription_labels.csv:/app/subscription_labels.csv:ro
+    command: ["versions"]

@@ -4,7 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.config import get_settings
 from src.core.database import init_db
-from src.api import health_router, auth_router, transactions_router
+from src.api import (
+    auth_router,
+    health_router,
+    subscriptions_router,
+    transactions_router,
+)
 
 settings = get_settings()
 
@@ -44,6 +49,7 @@ app.add_middleware(
 app.include_router(health_router, prefix="/api/health", tags=["Health"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication & Authorization"])
 app.include_router(transactions_router, prefix="/api/transactions", tags=["Transactions"])
+app.include_router(subscriptions_router, prefix="/api/subscriptions", tags=["Subscriptions"])
 @app.get("/")
 async def root():
     return {"message": "Wealify Financial Assistant API", "version": settings.APP_VERSION}

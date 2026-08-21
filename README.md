@@ -22,15 +22,33 @@ Wealify là trợ lý tài chính thông minh đóng vai trò như một **Chuy�
 Dự án sử dụng **1 file `.env` chung duy nhất** đặt tại thư mục gốc của repository cho môi trường phát triển cục bộ (Local Development).
 
 ```
-Crossborder_LinhLamThue/
 ├── .env.example              # File mẫu cấu hình chung cho cả dự án
 ├── .env                      # File cấu hình thực thi cục bộ (được gitignore)
 ├── render.yaml               # Blueprint cấu hình tự động Web Service trên Render
-├── backend/
+├── backend/                  # FastAPI application
 │   ├── Dockerfile            # Dockerfile multi-stage slim cho Render
-│   └── src/                  # Mã nguồn FastAPI
-└── frontend/
-    └── src/                  # Mã nguồn Next.js
+│   ├── src/                  # Mã nguồn FastAPI
+│   │   ├── api/              # API routes (auth, transactions, subscriptions)
+│   │   ├── core/             # Config, security, database
+│   │   ├── models/           # SQLAlchemy / Pydantic models
+│   │   ├── parsers/          # Statement, email parsers
+│   │   └── services/         # Business logic & ML model inference
+│   ├── tests/
+│   └── requirements.txt
+├── frontend/                 # Next.js application
+│   ├── src/                  # Mã nguồn Next.js
+│   │   ├── app/              # App router pages (landing, dashboard, login, register)
+│   │   ├── components/       # React components (auth, dashboard, common)
+│   │   ├── lib/              # Utilities, API client
+│   │   └── types/            # TypeScript types
+│   └── package.json
+├── ml/                       # Subscription detection model + MLOps pipeline
+│   ├── config.yaml           # Pipeline config (data, features, model, quality gates)
+│   ├── cli.py                # audit | train | evaluate | predict | promote | drift
+│   ├── pipeline/             # Feature engineering, training, registry, serving
+│   ├── registry/             # Versioned models (committed)
+│   └── tests/
+└── docs/                     # Documentation
 ```
 
 ---
@@ -180,7 +198,22 @@ npm run dev
 - Trang Đăng Nhập: `http://localhost:3000/login`
 - Dashboard Workspace: `http://localhost:3000/dashboard`
 
+<<<<<<< HEAD
 ---
+=======
+### ML pipeline
+
+```bash
+make -f ml/Makefile setup
+make -f ml/Makefile test audit train-promote
+```
+
+The backend serves the promoted model at `GET /api/subscriptions/model` and
+`POST /api/subscriptions/score`. See [ml/README.md](ml/README.md) for metrics,
+the leakage audit, and the MLOps lifecycle.
+
+## Requirements
+>>>>>>> 30d389d (mlops)
 
 ## 6. Kiểm Thử Tự Động (Automated Testing)
 
