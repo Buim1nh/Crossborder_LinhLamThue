@@ -3,7 +3,7 @@ services:
     name: wealify-backend
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerContext: .
     plan: free
     region: singapore
     healthCheckPath: /api/health
@@ -26,3 +26,5 @@ services:
         value: anthropic
       - key: LLM_API_KEY
         sync: false
+      - key: ML_ROOT
+        value: /app/ml

@@ -37,8 +37,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app/backend
 
 # Install minimal runtime dependencies (curl for healthchecks only) & clean apt caches
+# libgomp1 is REQUIRED for CatBoost to load model binaries on Linux
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libgomp1 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/* \
     && useradd --create-home --home-dir /home/appuser --shell /bin/bash -u 10001 appuser
