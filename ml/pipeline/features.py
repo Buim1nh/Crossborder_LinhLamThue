@@ -84,12 +84,22 @@ def _norm(name: str) -> str:
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Doi ten cot ve dang chuan, chap nhan moi bien the co/khong dau."""
+    """Doi ten cot ve dang chuan, chap nhan moi bien the co/khong dau.
+    After renaming, removes duplicate columns (keeping the first occurrence)."""
     mapping = {}
     for c in df.columns:
         key = _norm(c)
-        mapping[c] = COLUMN_ALIASES.get(key, c)
-    return df.rename(columns=mapping)
+        target = COLUMN_ALIASES.get(key, c)
+        if c != target:
+            mapping[c] = target
+    if not mapping:
+        return df
+    result = df.rename(columns=mapping)
+    # Drop duplicate columns (keep first occurrence) to avoid pandas ambiguity
+    dup_cols = result.columns[result.columns.duplicated()].tolist()
+    if dup_cols:
+        result = result.loc[:, ~result.columns.duplicated(keep='first')]
+    return result
 
 
 TARGET_COL = "label"

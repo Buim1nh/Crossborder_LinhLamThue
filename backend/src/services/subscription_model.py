@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
@@ -59,6 +60,26 @@ def model_info() -> dict[str, Any]:
     return get_detector().info()
 
 
+def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Convert complex types to plain Python types for pandas / ML pipeline.
+    Keeps numeric and string values as-is."""
+    import enum as _enum
+    out: dict[str, Any] = {}
+    for k, v in row.items():
+        if v is None:
+            out[k] = None
+        elif isinstance(v, datetime):
+            out[k] = v.strftime("%Y-%m-%d %H:%M:%S")
+        elif isinstance(v, _enum.Enum):
+            out[k] = v.value  # Enum → its string value
+        elif isinstance(v, (list, dict)):
+            out[k] = str(v)
+        # Keep int, float, str, bool as-is
+        else:
+            out[k] = v
+    return out
+
+
 def score_transactions(rows: list[dict[str, Any]],
                        threshold: Optional[float] = None) -> list[dict[str, Any]]:
     """Score raw statement rows (original CSV column names, with or without
@@ -68,6 +89,8 @@ def score_transactions(rows: list[dict[str, Any]],
     """
     if not rows:
         return []
+    # Normalize complex types (datetime, Enum) → plain Python for pandas
+    normalized = [_normalize_row(r) for r in rows]
     det = get_detector()
-    out = det.predict(pd.DataFrame(rows), threshold)
+    out = det.predict(pd.DataFrame(normalized), threshold)
     return out[["subscription_proba", "is_subscription", "model_version"]].to_dict("records")

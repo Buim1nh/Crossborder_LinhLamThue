@@ -50,7 +50,10 @@ async def upload_statement(
     if suffix.lower().endswith(".csv"):
         try:
             parsed_rows = await parse_csv_statement(content, be_source)
+            # DEBUG: log parsed count
+            print(f"[DEBUG] CSV parsed: {len(parsed_rows)} rows, filename={file.filename}")
         except Exception as exc:
+            import traceback; traceback.print_exc()
             raise HTTPException(
                 status_code=422,
                 detail=f"CSV parsing failed: {exc}",

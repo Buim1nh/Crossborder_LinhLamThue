@@ -7,6 +7,7 @@ Outputs rows in the column format expected by the ML feature pipeline
 """
 import io
 import re
+import unicodedata
 from datetime import datetime
 from typing import Optional
 import pandas as pd
@@ -116,13 +117,30 @@ def _parse_row(row: pd.Series, source: str) -> Optional[dict]:
     }
 
 
+def _normalize_vi(s: str) -> str:
+    """Strip Vietnamese diacritics + spaces + punctuation for fuzzy column matching.
+    Handles all Vietnamese diacritics including ơ, ư, ơ, ờ by decomposing to base + combining
+    then removing all combining marks."""
+    import unicodedata
+    # Pre-decompose specific Vietnamese chars that have no canonical NFD form
+    s = s.replace('ờ', 'ô')   # ờ → o + circumflex
+    s = s.replace('ợ', 'ọ')   # ơ → o + hook
+    s = s.replace('ự', 'ụ')  # ư → u + hook
+    # NFD decompose everything else
+    nfd = unicodedata.normalize('NFD', s)
+    # Remove all combining marks (Mn = Nonspacing Mark)
+    stripped = ''.join(c for c in nfd if unicodedata.category(c) != 'Mn')
+    # Remove spaces and punctuation, lowercase
+    return re.sub(r'[^a-z0-9]', '', stripped.lower())
+
+
 def _find_col(row: pd.Series, *patterns: str) -> Optional[str]:
-    """Find first column matching any pattern (normalized, case-insensitive)."""
+    """Find first column matching any pattern (normalized, case-insensitive, handles Vietnamese)."""
     for col in row.index:
-        col_lower = re.sub(r'[^a-z0-9]', '', str(col).lower())
+        col_norm = _normalize_vi(str(col))
         for pat in patterns:
-            pat_norm = re.sub(r'[^a-z0-9]', '', pat.lower())
-            if pat_norm and (pat_norm in col_lower or col_lower in pat_norm):
+            pat_norm = _normalize_vi(pat)
+            if pat_norm and (pat_norm in col_norm or col_norm in pat_norm):
                 return col
     return None
 
