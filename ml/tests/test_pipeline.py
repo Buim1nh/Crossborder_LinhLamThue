@@ -15,19 +15,19 @@ from ml.pipeline.train import run_training
 def cfg(tmp_path, raw_df) -> Config:
     csv = tmp_path / "mini.csv"
     raw_df.to_csv(csv, index=False)
-    base = yaml.safe_load((load_config().path).read_text())
+    base = yaml.safe_load((load_config().path).read_text(encoding="utf-8"))
     base["data"]["train"] = str(csv)
     base["split"]["cv_folds"] = 3
     base["model"] = {**base["model"], "iterations": 60, "od_wait": 20}
     base["registry"]["dir"] = str(tmp_path / "registry")
     p = tmp_path / "config.yaml"
-    p.write_text(yaml.safe_dump(base))
+    p.write_text(yaml.safe_dump(base), encoding="utf-8")
     return load_config(p)
 
 
 def test_config_thieu_section(tmp_path):
     p = tmp_path / "bad.yaml"
-    p.write_text(yaml.safe_dump({"project": "x"}))
+    p.write_text(yaml.safe_dump({"project": "x"}), encoding="utf-8")
     with pytest.raises(ValueError, match="thieu section"):
         load_config(p)
 
@@ -36,7 +36,7 @@ def test_config_mode_khong_hop_le(tmp_path, cfg):
     raw = dict(cfg.raw)
     raw["features"] = {"mode": "khong-ton-tai"}
     p = tmp_path / "bad2.yaml"
-    p.write_text(yaml.safe_dump(raw))
+    p.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError, match="features.mode"):
         load_config(p)
 
@@ -97,7 +97,7 @@ def test_model_card_va_manifest_duoc_ghi(cfg):
     for f in ["model.cbm", "feature_spec.json", "metrics.json",
               "manifest.json", "MODEL_CARD.md"]:
         assert (d / f).exists(), f
-    mf = json.loads((d / "manifest.json").read_text())
+    mf = json.loads((d / "manifest.json").read_text(encoding="utf-8"))
     assert mf["version"] == v
     assert "catboost" in mf["environment"]
     assert mf["train_file_sha256_16"]

@@ -80,34 +80,37 @@ def load_dataset(path: str | Path, require_label: bool = True,
     return df, warnings
 
 
-def load_raw(path: str) -> pd.DataFrame:
-    """Doc CSV goc va chuan hoa ten cot."""
-    df = pd.read_csv(path)
-    return normalize_columns(df)
+def file_hash(path: str | Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()[:16]
 
 
-def add_target(df: pd.DataFrame, positive_class: str = "SUBSCRIPTION",
-               label_col: str = "label") -> pd.DataFrame:
-    """Gan cot nhan tu gia tri trong cot 'label'."""
-    df = df.copy()
-    df[label_col] = (df[label_col] == positive_class).astype(int)
-    return df
+def make_split(df: pd.DataFrame, y: pd.Series, strategy: str, test_size: float,
+               valid_size: float, seed: int):
+    """Tra ve (train_idx, valid_idx, test_idx) dang mang vi tri."""
+    n = len(df)
+    if strategy == "time":
+        order = np.argsort(pd.to_datetime(_get_col(df, "Thoi_gian")).values, kind="mergesort")
+        n_te = int(round(test_size * n))
+        n_va = int(round(valid_size * (n - n_te)))
+        te = order[n - n_te:]
+        va = order[n - n_te - n_va: n - n_te]
+        tr = order[: n - n_te - n_va]
+        return tr, va, te
+    idx = np.arange(n)
+    y_vals = y.values if hasattr(y, "values") else np.asarray(y)
+    tr_va, te = train_test_split(idx, test_size=test_size, random_state=seed,
+                                 stratify=y_vals)
+    tr, va = train_test_split(tr_va, test_size=valid_size, random_state=seed,
+                              stratify=y_vals[tr_va])
+    return tr, va, te
 
 
-def split_data(df: pd.DataFrame, label_col: str = "label",
-               test_size: float = 0.2, seed: int = 42
-               ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Chia tap train/test theo ti le."""
-    return train_test_split(df, test_size=test_size, random_state=seed,
-                            stratify=df[label_col])
+def cv_folds(y: pd.Series, n_splits: int, seed: int):
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+    y_vals = y.values if hasattr(y, "values") else np.asarray(y)
+    return list(skf.split(np.zeros(len(y_vals)), y_vals))
 
-
-def crossval_splits(df: pd.DataFrame, label_col: str = "label",
-                    n_splits: int = 5, seed: int = 42
-                    ) -> list[tuple[pd.DataFrame, pd.DataFrame]]:
-    """Sinh n_splits folds cho cross-validation."""
-    kfold = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
-    splits = []
-    for train_idx, val_idx in kfold.split(df, df[label_col]):
-        splits.append((df.iloc[train_idx], df.iloc[val_idx]))
-    return splits

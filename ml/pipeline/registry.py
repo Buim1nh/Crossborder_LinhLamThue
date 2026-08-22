@@ -53,13 +53,13 @@ def save_version(registry_dir: Path, version: str, model, feature_spec: dict,
     d = Path(registry_dir) / version
     d.mkdir(parents=True, exist_ok=True)
     model.save_model(str(d / "model.cbm"))
-    (d / "feature_spec.json").write_text(json.dumps(feature_spec, indent=2, ensure_ascii=False))
-    (d / "metrics.json").write_text(json.dumps(metrics, indent=2, ensure_ascii=False))
+    (d / "feature_spec.json").write_text(json.dumps(feature_spec, indent=2, ensure_ascii=False), encoding="utf-8")
+    (d / "metrics.json").write_text(json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
     manifest = {**manifest, "version": version, "git_sha": _git_sha(),
                 "environment": environment(),
                 "created_at": datetime.now(timezone.utc).isoformat()}
-    (d / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False))
-    (d / "MODEL_CARD.md").write_text(model_card)
+    (d / "manifest.json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+    (d / "MODEL_CARD.md").write_text(model_card, encoding="utf-8")
     return d
 
 
@@ -75,7 +75,7 @@ def get_current(registry_dir: Path) -> str | None:
     f = Path(registry_dir) / CURRENT_FILE
     if not f.exists():
         return None
-    return json.loads(f.read_text()).get("version")
+    return json.loads(f.read_text(encoding="utf-8")).get("version")
 
 
 def promote(registry_dir: Path, version: str) -> None:
@@ -84,7 +84,7 @@ def promote(registry_dir: Path, version: str) -> None:
         raise FileNotFoundError(f"Phien ban khong ton tai: {d}")
     (Path(registry_dir) / CURRENT_FILE).write_text(json.dumps(
         {"version": version,
-         "promoted_at": datetime.now(timezone.utc).isoformat()}, indent=2))
+         "promoted_at": datetime.now(timezone.utc).isoformat()}, indent=2), encoding="utf-8")
 
 
 def resolve(registry_dir: Path, version: str | None = None) -> Path:

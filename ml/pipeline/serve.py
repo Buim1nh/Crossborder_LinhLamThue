@@ -29,9 +29,9 @@ class SubscriptionDetector:
         self.dir = resolve(self.registry_dir, version)
         self.version = self.dir.name
         self.spec = FeatureSpec.from_dict(json.loads(
-            (self.dir / "feature_spec.json").read_text()))
-        self.manifest = json.loads((self.dir / "manifest.json").read_text())
-        self.metrics = json.loads((self.dir / "metrics.json").read_text())
+            (self.dir / "feature_spec.json").read_text(encoding="utf-8")))
+        self.manifest = json.loads((self.dir / "manifest.json").read_text(encoding="utf-8"))
+        self.metrics = json.loads((self.dir / "metrics.json").read_text(encoding="utf-8"))
         self.feature_mode = self.manifest["feature_mode"]
         self.threshold = float(self.metrics["threshold"])
         self.model = CatBoostClassifier()

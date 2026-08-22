@@ -39,7 +39,7 @@ DRIFT_COLS = ["Noi_dung", "Loai_giao_dich", "Trang_thai", "Don_vi_tien_te", "So_
 def _write_json(path: str, payload: dict) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+    p.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Da ghi: {p}")
 
 
@@ -166,7 +166,7 @@ def cmd_promote(args) -> int:
         print("Registry rong. Chay `python -m ml.cli train` truoc.")
         return 1
     version = args.version or versions[-1]
-    metrics = json.loads((cfg.registry_dir / version / "metrics.json").read_text())
+    metrics = json.loads((cfg.registry_dir / version / "metrics.json").read_text(encoding="utf-8"))
     passed = metrics.get("gates_passed")
     if passed is False and not args.force:
         print(f"`{version}` truot cong chat luong:")
@@ -191,8 +191,8 @@ def cmd_versions(args) -> int:
     print(f"{'':<3}{'phien ban':<24}{'MCC (CV)':>11}{'std':>9}{'gate':>8}  train file")
     print("-" * 78)
     for v in versions:
-        m = json.loads((cfg.registry_dir / v / "metrics.json").read_text())
-        mf = json.loads((cfg.registry_dir / v / "manifest.json").read_text())
+        m = json.loads((cfg.registry_dir / v / "metrics.json").read_text(encoding="utf-8"))
+        mf = json.loads((cfg.registry_dir / v / "manifest.json").read_text(encoding="utf-8"))
         cv = m.get("cv", {})
         mark = "->" if v == cur else "  "
         gate = "DAT" if m.get("gates_passed") else "TRUOT"
