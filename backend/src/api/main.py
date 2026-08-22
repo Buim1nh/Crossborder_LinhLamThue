@@ -12,6 +12,7 @@ from src.api import (
     upload_router,
 )
 from src.api.anomalies import router as anomalies_router
+from src.api.insights import router as insights_router
 
 settings = get_settings()
 
@@ -54,6 +55,7 @@ app.include_router(transactions_router, prefix="/api/transactions", tags=["Trans
 app.include_router(subscriptions_router, prefix="/api/subscriptions", tags=["Subscriptions"])
 app.include_router(upload_router, prefix="/api/upload", tags=["Upload"])
 app.include_router(anomalies_router, prefix="/api/anomalies", tags=["Anomalies"])
+app.include_router(insights_router, prefix="/api/insights", tags=["Insights"])
 @app.get("/")
 async def root():
     return {"message": "Wealify Financial Assistant API", "version": settings.APP_VERSION}
