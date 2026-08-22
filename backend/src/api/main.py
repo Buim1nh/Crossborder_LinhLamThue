@@ -13,6 +13,7 @@ from src.api import (
 )
 from src.api.anomalies import router as anomalies_router
 from src.api.insights import router as insights_router
+from src.api.chat import router as chat_router
 
 settings = get_settings()
 
@@ -56,6 +57,7 @@ app.include_router(subscriptions_router, prefix="/api/subscriptions", tags=["Sub
 app.include_router(upload_router, prefix="/api/upload", tags=["Upload"])
 app.include_router(anomalies_router, prefix="/api/anomalies", tags=["Anomalies"])
 app.include_router(insights_router, prefix="/api/insights", tags=["Insights"])
+app.include_router(chat_router, prefix="/api/chat", tags=["Chat"])
 @app.get("/")
 async def root():
     return {"message": "Wealify Financial Assistant API", "version": settings.APP_VERSION}
