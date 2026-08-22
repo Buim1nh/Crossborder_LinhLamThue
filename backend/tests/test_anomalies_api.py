@@ -1,24 +1,39 @@
-"""Contract tests for GET /api/anomalies endpoint."""
+"""Contract tests for GET /api/anomalies endpoint.
+
+Tests run against a real in-memory SQLite DB with real AnomalyDetector logic.
+Each test registers a fresh user (unique email), seeds transactions via
+SQLAlchemy, then calls the endpoint over HTTP with a real JWT token.
+"""
 import pytest
 from datetime import datetime, timedelta
-from unittest.mock import patch
 
 from httpx import ASGITransport, AsyncClient
 
 from src.api.main import app
 from src.models.transaction import Transaction, TransactionType
+from src.models.user import User
+from src.core.security import create_access_token
 
 
-def make_transaction(user_id: int, merchant: str, amount: float, date: datetime) -> Transaction:
-    """Build a minimal Transaction row for use in tests."""
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _build_tx(
+    user_id: int,
+    amount: float,
+    merchant: str,
+    date: datetime,
+    source: str = "card",
+) -> Transaction:
+    """Return a detached Transaction row ready for db.add()."""
     t = Transaction()
-    t.id = 0  # will be replaced by the DB
     t.user_id = user_id
-    t.source = "card"
-    t.source_id = f"src_{merchant}_{amount}"
+    t.source = source
+    t.source_id = f"{source}_{merchant}_{amount}_{date.isoformat()}"
     t.type = TransactionType.CARD_SPEND
     t.amount = amount
-    t.currency = "USD"
+    t.currency = "VND"
     t.description = f"Purchase at {merchant}"
     t.merchant_name = merchant
     t.category = None
@@ -36,117 +51,138 @@ def make_transaction(user_id: int, merchant: str, amount: float, date: datetime)
     return t
 
 
-@pytest.mark.asyncio
-async def test_get_anomalies_returns_200_with_valid_auth():
-    """Authenticated request returns 200 and a list (possibly empty)."""
-    # Patch the detector to return an empty list so the response is predictable
-    with patch("src.services.anomaly_service.AnomalyDetector") as MockDetector:
-        MockDetector.return_value.detect_duplicates.return_value = []
-        MockDetector.return_value.detect_subscriptions.return_value = []
-        MockDetector.return_value.detect_discrepancies.return_value = []
+async def _register_and_get_token(ac: AsyncClient, suffix: str) -> tuple[int, str]:
+    """Register a unique user and return (user_id, access_token)."""
+    email = f"anomaly.test.{suffix}@example.com"
+    r = await ac.post(
+        "/api/auth/register",
+        json={
+            "email": email,
+            "password": "TestPassword123!",
+            "full_name": f"Test User {suffix}",
+        },
+    )
+    assert r.status_code == 201, f"Registration failed: {r.status_code} {r.text}"
+    data = r.json()
+    token: str = data["access_token"]
+    # Decode token sub claim (user_id) — simplest approach is to query the DB
+    return email, token
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-            r = await c.get(
-                "/api/anomalies",
-                headers={"Authorization": "Bearer dummy"},
-            )
-    # We expect either 200 (success) or 401/422 (not implemented yet)
-    assert r.status_code in (200, 401, 422)
 
-
-@pytest.mark.asyncio
-async def test_get_anomalies_unauthenticated_returns_401():
-    """No Authorization header should return 401."""
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        r = await c.get("/api/anomalies")
-    assert r.status_code == 401
-
+# ---------------------------------------------------------------------------
+# Test 1 — empty when no transactions
+# ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_response_schema_includes_required_fields():
-    """When transactions are present, each anomaly in the response has all required fields."""
-    now = datetime.utcnow()
-    t = make_transaction(user_id=1, merchant="Netflix", amount=15.99, date=now)
+async def test_anomalies_empty_when_no_transactions(transport, test_session_maker_fixture):
+    """A registered user with zero transactions gets an empty list."""
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        email, token = await _register_and_get_token(ac, "empty")
 
-    anomaly_data = {
-        "id": "test-uuid-1",
-        "type": "subscription",
-        "severity": "regular",
-        "description": "Recurring subscription detected: Netflix",
-        "recommendation": "Estimated next charge: $15.99 on 2026-09-22",
-        "transaction_ids": [1],
-        "dispute_deadline": (now + timedelta(days=60)).isoformat(),
-    }
-
-    with patch("src.services.anomaly_service.AnomalyDetector") as MockDetector:
-        mock_instance = MockDetector.return_value
-        from src.services.anomaly_detector import Anomaly
-        from src.models.transaction import AlertLevel
-
-        mock_anomaly = Anomaly(
-            type="subscription",
-            severity=AlertLevel.REGULAR,
-            transactions=[t],
-            description="Recurring subscription detected: Netflix",
-            recommendation="Estimated next charge: $15.99 on 2026-09-22",
-            dispute_deadline=now + timedelta(days=60),
+        r = await ac.get(
+            "/api/anomalies",
+            headers={"Authorization": f"Bearer {token}"},
         )
-        mock_instance.detect_duplicates.return_value = []
-        mock_instance.detect_subscriptions.return_value = [mock_anomaly]
-        mock_instance.detect_discrepancies.return_value = []
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-            r = await c.get(
-                "/api/anomalies",
-                headers={"Authorization": "Bearer dummy"},
-            )
+    assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+    assert r.json() == [], f"Expected empty list, got {r.json()}"
 
-    # If endpoint is not wired yet, skip schema assertion
-    if r.status_code == 200:
-        body = r.json()
-        assert isinstance(body, list)
-        for anomaly in body:
-            assert "id" in anomaly
-            assert "type" in anomaly
-            assert "severity" in anomaly
-            assert "description" in anomaly
-            assert "recommendation" in anomaly
-            assert "transaction_ids" in anomaly
-            assert "dispute_deadline" in anomaly
 
+# ---------------------------------------------------------------------------
+# Test 2 — duplicate charge detected
+# ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_response_severity_matches_alert_level():
-    """The severity field in the response should match the AlertLevel enum value."""
-    now = datetime.utcnow()
-    t = make_transaction(user_id=1, merchant="CoffeeShop", amount=50.00, date=now)
+async def test_duplicate_charge_detected(transport, test_session_maker_fixture):
+    """Two identical GrabFood charges within 24 hours produce a duplicate anomaly."""
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        email, token = await _register_and_get_token(ac, "dupes")
 
-    from src.services.anomaly_detector import Anomaly
-    from src.models.transaction import AlertLevel
+        # Look up user_id from the DB (the token sub claim is the email string)
+        from src.models.user import User
+        from sqlalchemy import select
+        async with test_session_maker_fixture() as db:
+            res = await db.execute(select(User).where(User.email == email))
+            user: User = res.scalar_one()
+            user_id = user.id
 
-    mock_anomaly = Anomaly(
-        type="duplicate",
-        severity=AlertLevel.NEEDS_CONFIRMATION,
-        transactions=[t],
-        description="Potential duplicate charge: $50.00 to CoffeeShop",
-        recommendation="Please verify if you made this purchase twice",
-        dispute_deadline=now + timedelta(days=60),
+        # Seed two identical transactions 12 hours apart
+        base = datetime.utcnow() - timedelta(days=1)
+        t1 = _build_tx(user_id=user_id, amount=85000.0, merchant="GrabFood", date=base)
+        t2 = _build_tx(user_id=user_id, amount=85000.0, merchant="GrabFood", date=base + timedelta(hours=12))
+
+        async with test_session_maker_fixture() as db:
+            db.add(t1)
+            db.add(t2)
+            await db.commit()
+
+        r = await ac.get(
+            "/api/anomalies",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+    body = r.json()
+    assert len(body) >= 1, f"Expected at least 1 anomaly, got {body}"
+
+    dupes = [a for a in body if a["type"] == "duplicate"]
+    assert len(dupes) >= 1, f"No duplicate anomaly found in {body}"
+    assert dupes[0]["severity"] == "needs_confirmation", (
+        f"Expected severity 'needs_confirmation', got '{dupes[0]['severity']}'"
     )
 
-    with patch("src.services.anomaly_service.AnomalyDetector") as MockDetector:
-        mock_instance = MockDetector.return_value
-        mock_instance.detect_duplicates.return_value = [mock_anomaly]
-        mock_instance.detect_subscriptions.return_value = []
-        mock_instance.detect_discrepancies.return_value = []
 
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-            r = await c.get(
-                "/api/anomalies",
-                headers={"Authorization": "Bearer dummy"},
+# ---------------------------------------------------------------------------
+# Test 3 — recurring subscription detected
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_recurring_subscription_detected(transport, test_session_maker_fixture):
+    """Four Netflix charges 28 days apart produce a subscription anomaly."""
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        email, token = await _register_and_get_token(ac, "sub")
+
+        async with test_session_maker_fixture() as db:
+            from src.models.user import User
+            from sqlalchemy import select
+            res = await db.execute(select(User).where(User.email == email))
+            user: User = res.scalar_one()
+            user_id = user.id
+
+        # Seed 4 transactions 28 days apart, amount = -260000 VND
+        base = datetime.utcnow() - timedelta(days=28 * 3)
+        for i in range(4):
+            t = _build_tx(
+                user_id=user_id,
+                amount=-260000.0,
+                merchant="Netflix",
+                date=base + timedelta(days=28 * i),
             )
+            async with test_session_maker_fixture() as db:
+                db.add(t)
+                await db.commit()
 
-    if r.status_code == 200:
-        body = r.json()
-        if body:  # may be empty if user has no transactions
-            for anomaly in body:
-                assert anomaly["severity"] in ("regular", "needs_confirmation", "insufficient_data")
+        r = await ac.get(
+            "/api/anomalies",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+    assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.text}"
+    body = r.json()
+    subs = [a for a in body if a["type"] == "subscription"]
+    assert len(subs) >= 1, f"No subscription anomaly found in {body}"
+    assert "netflix" in subs[0]["description"].lower(), (
+        f"Expected 'netflix' in description, got '{subs[0]['description']}'"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Test 4 — unauthenticated returns 401
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_anomalies_requires_auth(transport):
+    """Request without Authorization header must return 401."""
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        r = await ac.get("/api/anomalies")
+    assert r.status_code == 401, f"Expected 401, got {r.status_code}: {r.text}"

@@ -35,3 +35,9 @@ app.dependency_overrides[get_db] = override_get_db
 @pytest.fixture
 def transport():
     return ASGITransport(app=app)
+
+
+@pytest.fixture
+def test_session_maker_fixture():
+    """Expose test_session_maker so other test modules can seed the DB."""
+    return test_session_maker

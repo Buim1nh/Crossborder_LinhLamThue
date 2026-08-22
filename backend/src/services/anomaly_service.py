@@ -23,8 +23,18 @@ def detect_anomalies(transactions: List[Transaction]) -> List[dict]:
     """Run all anomaly detectors and return a flat list of anomaly responses."""
     detector = AnomalyDetector()
     results: List[dict] = []
-    for method_name in ("detect_duplicates", "detect_subscriptions", "detect_discrepancies"):
+
+    # detect_duplicates and detect_subscriptions take a flat transaction list
+    for method_name in ("detect_duplicates", "detect_subscriptions"):
         method = getattr(detector, method_name)
         for anomaly in method(transactions):
             results.append(_to_response(anomaly))
+
+    # detect_discrepancies requires three separate source lists
+    account_txns = [t for t in transactions if t.source == "account"]
+    wallet_txns  = [t for t in transactions if t.source == "wallet"]
+    card_txns    = [t for t in transactions if t.source == "card"]
+    for anomaly in detector.detect_discrepancies(account_txns, wallet_txns, card_txns):
+        results.append(_to_response(anomaly))
+
     return results
