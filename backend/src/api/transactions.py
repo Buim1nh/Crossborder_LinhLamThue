@@ -16,7 +16,7 @@ async def get_transactions(
     source: Optional[str] = Query(None, description="Filter by source (account, wallet, card)"),
     is_flagged: Optional[bool] = Query(None, description="Filter by flagged status"),
     is_subscription: Optional[bool] = Query(None, description="Filter by subscription status"),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
