@@ -30,10 +30,11 @@ function txSummaryToDashboard(tx: TransactionSummary): DashboardTransaction {
     id: tx.id,
     source: tx.source === 'account' ? 'bank' : (tx.source as 'bank' | 'wallet' | 'card'),
     sourceName: tx.source === 'account' ? 'Ngân hàng' : tx.source === 'wallet' ? 'Ví điện tử' : 'Thẻ tín dụng',
-    merchant: tx.merchant_name || tx.description?.slice(0, 30) || '—',
+    merchant: tx.merchant_name || tx.description?.slice(0, 35) || '—',
     description: tx.description || '',
     category: tx.category || 'Khác',
     amount: tx.amount,
+    currency: tx.currency || 'VND',
     date: date ? new Date(date).toLocaleDateString('vi-VN') : '—',
     time: time ? time.slice(0, 5) : undefined,
     isFlagged: tx.is_flagged,
@@ -47,20 +48,39 @@ function computeMetrics(
   txs: TransactionSummary[],
   modelInfo: SubscriptionModelInfo | null
 ): FinancialMetricsData {
-  const income = txs.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0)
-  const expense = Math.abs(txs.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0))
-  const subscriptions = txs.filter((t) => t.is_subscription)
+  let totalIncomeVND = 0
+  let totalExpenseVND = 0
+  let subscriptionBurnVND = 0
+
+  txs.forEach((t) => {
+    const curr = (t.currency || 'VND').toUpperCase()
+    const rate = curr === 'USD' ? 25400 : curr === 'EUR' ? 27500 : 1
+    const amountVND = t.amount * rate
+
+    if (t.amount > 0) {
+      totalIncomeVND += amountVND
+    } else {
+      totalExpenseVND += Math.abs(amountVND)
+    }
+
+    if (t.is_subscription) {
+      subscriptionBurnVND += Math.abs(amountVND)
+    }
+  })
+
+  const netSavingsVND = totalIncomeVND - totalExpenseVND
   const flagged = txs.filter((t) => t.is_flagged)
+  const subscriptions = txs.filter((t) => t.is_subscription)
 
   return {
-    totalIncome: `+${income.toLocaleString('vi-VN')}₫`,
-    totalExpense: `-${expense.toLocaleString('vi-VN')}₫`,
-    netSavings: `${income - expense >= 0 ? '+' : ''}${(income - expense).toLocaleString('vi-VN')}₫`,
+    totalIncome: `+${Math.round(totalIncomeVND).toLocaleString('vi-VN')}₫`,
+    totalExpense: `-${Math.round(totalExpenseVND).toLocaleString('vi-VN')}₫`,
+    netSavings: `${netSavingsVND >= 0 ? '+' : ''}${Math.round(netSavingsVND).toLocaleString('vi-VN')}₫`,
     anomaliesCount: flagged.length,
     unresolvedAnomalies: flagged.length,
     subscriptionsCount: subscriptions.length,
     monthlySubscriptionBurn: subscriptions.length > 0
-      ? `${Math.abs(subscriptions.reduce((s, t) => s + t.amount, 0)).toLocaleString('vi-VN')}₫`
+      ? `${Math.round(subscriptionBurnVND).toLocaleString('vi-VN')}₫`
       : '0₫',
     savingsOpportunity: modelInfo ? `ML v${modelInfo.version}` : 'Chưa kết nối',
   }
@@ -77,6 +97,7 @@ export default function DashboardPage() {
 
   const [transactions, setTransactions] = useState<TransactionSummary[]>([])
   const [dashboardTxs, setDashboardTxs] = useState<DashboardTransaction[]>([])
+  const [txTotal, setTxTotal] = useState(0)
   const [isLoadingTxs, setIsLoadingTxs] = useState(false)
   const [txError, setTxError] = useState<string | null>(null)
 
@@ -88,10 +109,30 @@ export default function DashboardPage() {
     setIsLoadingTxs(true)
     setTxError(null)
     try {
-      const txResult = await transactionsApi.list({ limit: 200 })
-      setTransactions(txResult.transactions)
-      setDashboardTxs(txResult.transactions.map(txSummaryToDashboard))
-      setMetrics(computeMetrics(txResult.transactions, modelInfo))
+      // Page through the API until the ledger is complete. A single
+      // ?limit=1000 call would silently truncate the dashboard for users with
+      // more than 1000 transactions.
+      const PAGE_SIZE = 1000
+      let offset = 0
+      let totalCount = 0
+      const all: TransactionSummary[] = []
+      while (true) {
+        const page = await transactionsApi.list({ limit: PAGE_SIZE, offset })
+        all.push(...page.transactions)
+        totalCount = page.total
+        offset += page.transactions.length
+        if (page.transactions.length === 0 || offset >= totalCount) {
+          break
+        }
+      }
+      setTransactions(all)
+      setTxTotal(totalCount)
+      setDashboardTxs(all.map(txSummaryToDashboard))
+      // DEBUG: verify amounts arrive correctly
+      console.log('[DEBUG] txSummaryToDashboard sample:', all.slice(0, 3).map(txSummaryToDashboard).map(t => ({
+        id: t.id, amount: t.amount, currency: t.currency, merchant: t.merchant
+      })))
+      setMetrics(computeMetrics(all, modelInfo))
     } catch (err) {
       setTxError(err instanceof Error ? err.message : 'Lỗi tải dữ liệu')
     } finally {
@@ -265,6 +306,7 @@ export default function DashboardPage() {
           ) : (
             <LinearTransactionLedger
               transactions={dashboardTxs}
+              totalCount={txTotal}
               onTransactionClick={handleTransactionClick}
             />
           )}

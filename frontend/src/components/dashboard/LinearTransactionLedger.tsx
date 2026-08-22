@@ -5,6 +5,7 @@ import { TransactionSourceType, DashboardTransaction } from './TransactionFeed'
 
 export interface LinearTransactionLedgerProps {
   transactions?: DashboardTransaction[]
+  totalCount?: number
   onTransactionClick?: (tx: DashboardTransaction) => void
   className?: string
 }
@@ -113,8 +114,31 @@ const DEFAULT_TRANSACTIONS: DashboardTransaction[] = [
   },
 ]
 
+/** Expense categories that represent money going OUT — rendered as negative regardless of sign stored in DB. */
+const EXPENSE_CATEGORIES = new Set([
+  'Khác', 'Mua sắm', 'Ăn uống', 'Giải trí', 'Hóa đơn', 'Phí ngân hàng',
+  'Công việc', 'Di chuyển', 'Y tế', 'Giáo dục', 'Bảo hiểm',
+  'Rút tiền',
+])
+
+/**
+ * Defensive amount normaliser.
+ *
+ * The backend parser historically stripped the sign from all amounts (stored abs()).
+ * Until the DB is re-ingested this means outflows arrive as positive numbers.
+ * This helper forces expense categories to be negative so they render with "-"
+ * regardless of the sign stored in the database.
+ */
+function correctAmount(tx: DashboardTransaction): number {
+  if (EXPENSE_CATEGORIES.has(tx.category) && tx.amount > 0) {
+    return -Math.abs(tx.amount)
+  }
+  return tx.amount
+}
+
 export function LinearTransactionLedger({
   transactions = DEFAULT_TRANSACTIONS,
+  totalCount,
   onTransactionClick,
   className = '',
 }: LinearTransactionLedgerProps) {
@@ -146,10 +170,18 @@ export function LinearTransactionLedger({
     return true
   })
 
-  const formatVND = (num: number) => {
-    const formatted = Math.abs(num).toLocaleString('vi-VN')
-    if (num > 0) return `+${formatted}₫`
-    return `-${formatted}₫`
+  const formatCurrency = (num: number, currency?: string) => {
+    const curr = (currency || 'VND').toUpperCase()
+    const absVal = Math.abs(num)
+    const prefix = num > 0 ? '+' : '-'
+
+    if (curr === 'USD' || curr === '$') {
+      return `${prefix}$${absVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    } else if (curr === 'EUR' || curr === '€') {
+      return `${prefix}€${absVal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    } else {
+      return `${prefix}${absVal.toLocaleString('vi-VN')}₫`
+    }
   }
 
   const getSourceBadgeClass = (source: TransactionSourceType) => {
@@ -175,7 +207,7 @@ export function LinearTransactionLedger({
               Sổ Cái Giao Dịch Hợp Nhất 3 Nguồn
             </h2>
             <p className="text-sm text-neutral-500 mt-1">
-              Hiển thị {filteredList.length} / {transactions.length} giao dịch đã được chuẩn hóa & gắn cờ đối chiếu
+              Hiển thị {filteredList.length} / {totalCount ?? transactions.length} giao dịch đã được chuẩn hóa & gắn cờ đối chiếu
             </p>
           </div>
 
@@ -306,7 +338,7 @@ export function LinearTransactionLedger({
                   onTransactionClick?.(tx)
                 }
               }}
-              aria-label={`Giao dịch ${tx.merchant} ${formatVND(tx.amount)}`}
+              aria-label={`Giao dịch ${tx.merchant} ${formatCurrency(correctAmount(tx), tx.currency)}`}
               className={`p-5 sm:px-7 hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-inset transition-colors cursor-pointer ${
                 tx.isFlagged ? 'bg-amber-50/40' : ''
               }`}
@@ -363,10 +395,10 @@ export function LinearTransactionLedger({
                 <div className="text-right shrink-0">
                   <p
                     className={`text-lg sm:text-xl font-bold leading-tight ${
-                      tx.amount > 0 ? 'text-success' : 'text-neutral-900'
+                      correctAmount(tx) > 0 ? 'text-success' : 'text-neutral-900'
                     }`}
                   >
-                    {formatVND(tx.amount)}
+                    {formatCurrency(correctAmount(tx), tx.currency)}
                   </p>
                   <p className="text-xs sm:text-sm text-neutral-400 mt-1">
                     {tx.date} {tx.time ? `• ${tx.time}` : ''}
