@@ -1,8 +1,11 @@
 """Subscription detection endpoints (CatBoost model from ml/registry)."""
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
+
+from src.api.deps import get_current_active_user
+from src.models.user import User
 
 from src.services.subscription_model import (ModelNotAvailable, get_detector,
                                              is_available, model_info,
@@ -36,7 +39,7 @@ class ScoreResponse(BaseModel):
 
 
 @router.get("/model")
-async def get_model_info():
+async def get_model_info(current_user: User = Depends(get_current_active_user)):
     """Metadata of the model currently being served."""
     if not is_available():
         raise HTTPException(
@@ -47,7 +50,7 @@ async def get_model_info():
 
 
 @router.post("/score", response_model=ScoreResponse)
-async def score(request: ScoreRequest):
+async def score(request: ScoreRequest, current_user: User = Depends(get_current_active_user)):
     """Score a batch of transactions for being subscription payments."""
     if not request.transactions:
         raise HTTPException(status_code=400, detail="transactions is empty")

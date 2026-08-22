@@ -26,11 +26,25 @@ def _sample_rows(n: int = 8) -> list[dict]:
     return rows
 
 
+async def _register_and_get_token(c: AsyncClient) -> str:
+    """Register a test user and return a valid bearer token."""
+    import uuid
+    email = f"subtest.{uuid.uuid4().hex[:8]}@example.com"
+    reg = await c.post("/api/auth/register", json={
+        "email": email,
+        "password": "TestPass123!",
+        "full_name": "Subscription Test User",
+    })
+    return reg.json()["access_token"]
+
+
 @pytest.mark.asyncio
 @needs_model
 async def test_model_info():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        r = await c.get("/api/subscriptions/model")
+        token = await _register_and_get_token(c)
+        r = await c.get("/api/subscriptions/model",
+                        headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
     body = r.json()
     assert body["version"].startswith("v")
@@ -44,7 +58,9 @@ async def test_model_info():
 async def test_score_batch():
     rows = _sample_rows()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        r = await c.post("/api/subscriptions/score", json={"transactions": rows})
+        token = await _register_and_get_token(c)
+        r = await c.post("/api/subscriptions/score", json={"transactions": rows},
+                          headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200
     body = r.json()
     assert body["n_scored"] == len(rows)
@@ -61,10 +77,13 @@ async def test_score_batch():
 async def test_score_respects_threshold_override():
     rows = _sample_rows()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        token = await _register_and_get_token(c)
         low = await c.post("/api/subscriptions/score",
-                           json={"transactions": rows, "threshold": 0.0})
+                           json={"transactions": rows, "threshold": 0.0},
+                           headers={"Authorization": f"Bearer {token}"})
         high = await c.post("/api/subscriptions/score",
-                            json={"transactions": rows, "threshold": 1.0})
+                            json={"transactions": rows, "threshold": 1.0},
+                            headers={"Authorization": f"Bearer {token}"})
     assert low.json()["n_subscription"] == len(rows)
     assert high.json()["n_subscription"] == 0
 
@@ -72,7 +91,9 @@ async def test_score_respects_threshold_override():
 @pytest.mark.asyncio
 async def test_score_rejects_empty_batch():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        r = await c.post("/api/subscriptions/score", json={"transactions": []})
+        token = await _register_and_get_token(c)
+        r = await c.post("/api/subscriptions/score", json={"transactions": []},
+                         headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 400
 
 
@@ -80,6 +101,25 @@ async def test_score_rejects_empty_batch():
 @needs_model
 async def test_score_rejects_bad_schema():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        token = await _register_and_get_token(c)
         r = await c.post("/api/subscriptions/score",
-                         json={"transactions": [{"khong_phai_giao_dich": 1}]})
+                         json={"transactions": [{"khong_phai_giao_dich": 1}]},
+                         headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_score_requires_auth():
+    """Verify /api/subscriptions/score is protected by auth — no model needed."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        resp = await c.post("/api/subscriptions/score",
+                            json={"transactions": [{"Loai_giao_dich": "Top Up", "So_tien": 260000}]})
+    assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_model_info_requires_auth():
+    """Verify /api/subscriptions/model is protected by auth — no model needed."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        resp = await c.get("/api/subscriptions/model")
+    assert resp.status_code == 401

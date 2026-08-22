@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/common/Button'
+import { chatApi } from '@/lib/api'
 
 export interface ChatMessage {
   id: string
@@ -75,7 +76,7 @@ export function AIChatPanel({
 
   if (!isOpen) return null
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = textToSend || inputValue
     if (!text.trim()) return
 
@@ -91,63 +92,26 @@ export function AIChatPanel({
     onSendMessage?.(text)
 
     setIsTyping(true)
-    setTimeout(() => {
-      let botResponseText: React.ReactNode = ''
-      if (text.includes('Netflix') || text.includes('tra soát')) {
-        botResponseText = (
-          <div className="space-y-2 text-sm text-neutral-800 leading-relaxed">
-            <p>
-              Đối với khoản <strong>Netflix 260.000₫</strong> bị trừ 2 lần:
-            </p>
-            <p className="text-xs text-neutral-700">
-              1. Giao dịch 1: Ví MoMo lúc 02:15 ngày 15/02.<br />
-              2. Giao dịch 2: Techcombank Visa **** 8829 lúc 02:16 ngày 15/02.
-            </p>
-            <p className="text-xs text-success font-semibold">
-              Thời hạn tra soát còn 54 ngày. Bạn có thể nhấn nút "Tạo mẫu tra soát" ở bảng cảnh báo để sao chép văn bản khiếu nại ngân hàng.
-            </p>
-          </div>
-        )
-      } else if (text.includes('gia hạn') || text.includes('định kỳ') || text.includes('subscription')) {
-        botResponseText = (
-          <div className="space-y-2 text-sm text-neutral-800 leading-relaxed">
-            <p>
-              Danh sách 4 gói dịch vụ tự động gia hạn:
-            </p>
-            <ul className="list-disc pl-4 space-y-1 text-xs text-neutral-700">
-              <li><strong>Netflix:</strong> 260.000₫ / tháng (MoMo & Visa)</li>
-              <li><strong>Spotify:</strong> 59.000₫ / tháng (Visa)</li>
-              <li><strong>ChatGPT Plus:</strong> 500.000₫ / tháng (MoMo)</li>
-              <li><strong>Cloud Storage:</strong> 301.000₫ / tháng (Visa)</li>
-            </ul>
-            <p className="text-xs text-primary font-bold">
-              Tổng tiêu hao: 1.120.000₫ / tháng.
-            </p>
-          </div>
-        )
-      } else {
-        botResponseText = (
-          <div className="space-y-1.5 text-sm text-neutral-800 leading-relaxed">
-            <p>
-              Tổng kết 3 nguồn tháng này: Bạn đã tiết kiệm được <strong>17.150.000₫</strong> (đạt tỷ lệ tiết kiệm 53.6%).
-            </p>
-            <p className="text-xs text-neutral-600">
-              Nhóm chi tiêu lớn nhất gồm: <strong>Hóa đơn tiện ích (1.450.000₫)</strong> và <strong>Dịch vụ trực tuyến (1.120.000₫)</strong>.
-            </p>
-          </div>
-        )
-      }
-
+    try {
+      const response = await chatApi.sendMessage(text)
       const botMsg: ChatMessage = {
         id: `bot-${Date.now()}`,
         role: 'assistant',
-        content: botResponseText,
+        content: response.reply,
         timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
       }
-
       setMessages((prev) => [...prev, botMsg])
+    } catch (err) {
+      const errorMsg: ChatMessage = {
+        id: `bot-${Date.now()}`,
+        role: 'assistant',
+        content: err instanceof Error ? err.message : 'Có lỗi xảy ra. Vui lòng thử lại.',
+        timestamp: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages((prev) => [...prev, errorMsg])
+    } finally {
       setIsTyping(false)
-    }, 900)
+    }
   }
 
   return (

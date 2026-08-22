@@ -298,6 +298,27 @@ export const transactionsApi = {
   },
 }
 
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatResponse {
+  reply: string
+  model: string
+}
+
+export const chatApi = {
+  sendMessage: async (message: string, history: ChatMessage[] = []): Promise<ChatResponse> => {
+    return request<ChatResponse>('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, history }),
+    })
+  },
+}
+
 // ─── Upload ─────────────────────────────────────────────────────────────────
 
 export interface UploadResponse {
